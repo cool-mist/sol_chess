@@ -50,7 +50,7 @@ build_web() {
       return 1
   fi
 
-  rm -rf ${TARGET_DIR} && mkdir -p ${TARGET_DIR} && mv ./target/wasm32-unknown-unknown/${BUILD_PROFILE}/${BINARY_NAME}.wasm ${TARGET_DIR}/${BINARY_NAME}.wasm && cp ./tools/web/index.html ${TARGET_DIR}/index.html
+  rm -rf ${TARGET_DIR} && mkdir -p ${TARGET_DIR} && mv ./target/wasm32-unknown-unknown/${BUILD_PROFILE}/${BINARY_NAME}.wasm ${TARGET_DIR}/${BINARY_NAME}.wasm && cp ./tools/web/index.html ${TARGET_DIR}/index.html && cp ./tools/web/mq.js ${TARGET_DIR}/mq.js
   if [ $? -ne 0 ]; then
       echo "Failed to assemble the build in ${TARGET_DIR}"
       return 1
