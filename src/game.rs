@@ -5,7 +5,7 @@ use std::{
 
 use button::Button;
 use color::UiColor;
-use macroquad::{audio, math, prelude::*, rand};
+use macroquad::{math, prelude::*, rand};
 use shadow::draw_shadow;
 use sol_chess::{
     board::{Board, BoardState},
@@ -19,6 +19,7 @@ pub mod color;
 pub mod shadow;
 pub mod sound;
 pub mod texture;
+pub mod constants;
 
 pub struct MacroquadRandAdapter;
 impl RandomRange for MacroquadRandAdapter {
@@ -428,24 +429,21 @@ impl Game {
         self.squares = rects;
 
         let btn_h = 0.08 * min_dimension;
-        let btn_w = board_width * 0.2;
-
+        let btn_w = board_width * 0.20;
         let btn_y = board_width + board_y + 0.3 * self.square_width;
-        let btn_x_offset = 0.5 * (board_width / 2. - btn_w);
+        let btn_reset_x_offset = board_width / 2. + ((board_width / 4. - btn_w) / 2.);
         let reset_btn = Button::new(
             "Reset",
-            Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
+            Rect::new(board_x + btn_reset_x_offset, btn_y, btn_w, btn_h),
             UiColor::Yellow,
             self.sounds.button.clone(),
         );
+
+        let btn_next_x_offset =
+            board_width / 2. + board_width / 4. + ((board_width / 4. - btn_w) / 2.);
         let mut next_btn = Button::new(
             "Next",
-            Rect::new(
-                board_x + (0.5 * board_width) + btn_x_offset,
-                btn_y,
-                btn_w,
-                btn_h,
-            ),
+            Rect::new(board_x + btn_next_x_offset, btn_y, btn_w, btn_h),
             UiColor::Green,
             self.sounds.button.clone(),
         );
@@ -607,9 +605,9 @@ impl Game {
                         .get_mut(&ButtonAction::Next)
                         .expect("Cannot find next button");
                     next_btn.is_active = true;
-                    audio::play_sound_once(&self.sounds.win);
+                    Sounds::play(&self.sounds.win);
                 } else {
-                    audio::play_sound_once(&self.sounds.loss);
+                    Sounds::play(&self.sounds.loss);
                 }
 
                 return GameState::GameOver((x, y));
@@ -617,7 +615,7 @@ impl Game {
 
             self.reset_squares();
             self.get(x, y).is_target = true;
-            audio::play_sound_once(&self.sounds.click);
+            Sounds::play(&self.sounds.click);
             return GameState::SelectSource(Some((x, y)));
         }
 

@@ -1,4 +1,6 @@
-use macroquad::{audio::{self, Sound}, prelude::*};
+use macroquad::{audio::Sound, prelude::*};
+
+use crate::game::sound::Sounds;
 
 use super::{color::UiColor, shadow::draw_shadow};
 
@@ -119,7 +121,7 @@ impl Button {
         if is_mouse_button_released(MouseButton::Left) {
             if c.overlaps_rect(&self.rect) {
                 self.is_clicked = true;
-                audio::play_sound_once(&self.sound);
+                Sounds::play(&self.sound);
                 self.is_down = false;
                 return;
             }
