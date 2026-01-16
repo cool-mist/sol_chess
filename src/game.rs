@@ -16,10 +16,10 @@ use texture::PieceTexture;
 
 pub mod button;
 pub mod color;
+pub mod constants;
 pub mod shadow;
 pub mod sound;
 pub mod texture;
-pub mod constants;
 
 pub struct MacroquadRandAdapter;
 impl RandomRange for MacroquadRandAdapter {
@@ -181,13 +181,6 @@ impl Game {
 
                 if rules_btn_clicked {
                     self.rules = !self.rules;
-                    if self.rules {
-                        self.rules_btn[0].text = "Close".to_string();
-                        self.rules_btn[0].color = UiColor::Green;
-                    } else {
-                        self.rules_btn[0].text = "Rules".to_string();
-                        self.rules_btn[0].color = UiColor::Brown;
-                    }
                 }
             }
         }
@@ -201,8 +194,22 @@ impl Game {
         }
 
         if is_key_released(KeyCode::Escape) {
+            if self.rules {
+                Sounds::play(&self.sounds.button);
+            }
+
             self.rules = false;
-            return;
+        }
+
+        if self.rules_btn.get(0).is_some() {
+            let rules_btn = &mut self.rules_btn[0];
+            if self.rules {
+                rules_btn.text = "Close".to_string();
+                rules_btn.color = UiColor::Green;
+            } else {
+                rules_btn.text = "Rules".to_string();
+                rules_btn.color = UiColor::Brown;
+            }
         }
 
         if is_key_released(KeyCode::D) {
@@ -343,7 +350,7 @@ impl Game {
         }
     }
 
-    fn draw_buttons(&self) {
+    fn draw_buttons(&mut self) {
         for btn in &self.gp_btns {
             btn.1.draw();
         }
