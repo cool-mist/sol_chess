@@ -29,7 +29,7 @@ fn main() {
         let board = if let Some(board_string) = args.solve_board {
             Board::from_string(board_string)
         } else if let Some(board_id) = args.solve {
-            Board::from_id(board_id)
+            Board::from_id(&board_id)
         } else {
             println!("Use --help to see available options");
             return;
@@ -106,7 +106,7 @@ struct Args {
 
     #[argh(option, short = 's')]
     /// the id of the board to solve
-    solve: Option<u128>,
+    solve: Option<String>,
 
     #[argh(option)]
     /// the board to solve in board representation

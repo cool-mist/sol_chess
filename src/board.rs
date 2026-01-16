@@ -17,6 +17,8 @@ use errors::SError;
 use piece::Piece;
 use square::{Square, SquarePair};
 
+use crate::util;
+
 #[derive(Clone)]
 pub struct Board {
     pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
@@ -43,12 +45,20 @@ impl Board {
         }
     }
 
-    pub fn from_id(board_id: u128) -> Result<Self, SError> {
+    pub fn from_id(board_id: &str) -> Result<Self, SError> {
+        let mut board_id_bytes = [0; 8];
+        board_id_bytes.copy_from_slice(board_id.as_bytes());
+        let mut working_bytes_slice = [0; 6];
+        util::b64_decode_48(&board_id_bytes, &mut working_bytes_slice);
+
+        let mut working_bytes = [0; 8];
+        working_bytes[2..].copy_from_slice(&working_bytes_slice);
+        let mut working = u64::from_be_bytes(working_bytes);
+
         let mut board = Board::new();
-        let mut working = board_id;
+        let mask = 0b111;
         for i in (0..BOARD_SIZE).rev() {
             for j in (0..BOARD_SIZE).rev() {
-                let mask = 0b111;
                 let piece = Board::get_piece_from_encoding((working & mask) as u8);
                 working = working >> 3;
                 let piece = piece?;
@@ -136,21 +146,24 @@ impl Board {
 
     pub fn pretty_print(&self) {
         println!("{}", self.print(true));
+        // println!("{:^40}\n", format!("id: {:#018x}", self.id()));
         println!("{:^40}\n", format!("id: {}", self.id()));
     }
 
-    pub fn id(&self) -> u128 {
-        let mut res: u128 = 0;
+    pub fn id(&self) -> String {
+        let mut res: u64 = 0;
 
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
                 res = res << 3;
                 let byte = Board::get_piece_encoding(self.cells[i][j]);
-                res = res | byte as u128
+                res = res | byte as u64
             }
         }
 
-        res
+        let mut id_bytes = [0; 6];
+        id_bytes.copy_from_slice(&res.to_be_bytes()[2..]);
+        util::b64_encode_48(&id_bytes)
     }
 
     fn print(&self, pretty: bool) -> String {
@@ -585,7 +598,7 @@ mod tests {
         board.set(sq!("Nc4"));
 
         let id = board.id();
-        let board2 = Board::from_id(id);
+        let board2 = Board::from_id(&id);
         let board2 = board2.unwrap();
 
         validate_board!(board2, "..NB", "....", "RQ.K", "P...");

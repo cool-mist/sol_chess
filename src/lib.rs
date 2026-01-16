@@ -1,3 +1,4 @@
 pub mod board;
 pub mod generator;
 pub mod solver;
+pub mod util;
