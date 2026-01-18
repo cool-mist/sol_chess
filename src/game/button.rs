@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use macroquad::{audio::Sound, prelude::*};
 
 use crate::game::sound::Sounds;
@@ -13,10 +15,11 @@ pub struct Button {
     shadow_width: f32,
     pub color: UiColor,
     sound: Sound,
+    font: Arc<Font>,
 }
 
 impl Button {
-    pub fn new(text: &str, rect: Rect, color: UiColor, sound: Sound) -> Self {
+    pub fn new(text: &str, rect: Rect, color: UiColor, sound: Sound, font: Arc<Font>) -> Self {
         Self {
             text: text.to_string(),
             is_down: false,
@@ -26,6 +29,7 @@ impl Button {
             shadow_width: 5.0,
             color,
             sound,
+            font,
         }
     }
 
@@ -78,16 +82,21 @@ impl Button {
             false => Color::from_rgba(100, 100, 100, 255),
         };
 
-        let font_size = (0.3 * self.rect.w) as u16;
-        let dims = measure_text(&self.text, None, font_size, 1.0);
+        let font_size = (0.2 * self.rect.w) as u16;
+        let dims = measure_text(&self.text, Some(&self.font), font_size, 1.0);
         let button_draw_offset = self.get_button_draw_offset();
 
-        draw_text(
+        let text_params = TextParams {
+            font_size: font_size as u16,
+            color: font_color,
+            font: Some(&self.font),
+            ..Default::default()
+        };
+        draw_text_ex(
             &self.text,
             self.rect.x + (self.rect.w - dims.width) * 0.5 + button_draw_offset,
             self.rect.y + (self.rect.h - dims.height) * 0.5 + dims.offset_y + button_draw_offset,
-            font_size as f32,
-            font_color,
+            text_params,
         );
     }
 

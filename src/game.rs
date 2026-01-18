@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter}, sync::Arc,
 };
 
 use button::Button;
@@ -38,6 +38,7 @@ pub struct Game {
     // Constants througout the game
     texture_res: Texture2D,
     sounds: Sounds,
+    font: Arc<Font>,
     num_squares: usize,
     heading_text: String,
 
@@ -92,7 +93,7 @@ enum GameState {
 }
 
 impl Game {
-    pub fn new(texture_res: Texture2D, sounds: Sounds) -> Self {
+    pub fn new(texture_res: Texture2D, sounds: Sounds, font: Font) -> Self {
         let num_squares: usize = 4;
         let game_mode = GameMode::Medium;
         let board = Game::generate_puzzle(game_mode);
@@ -118,6 +119,7 @@ impl Game {
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
+            font: Arc::new(font),
         }
     }
 
@@ -259,13 +261,18 @@ impl Game {
 
     fn draw_heading(&self) {
         let f = self.heading_font_size.floor() as u16;
-        let dims = measure_text(self.heading_text.as_str(), None, f, 1.0);
-        draw_text(
+        let dims = measure_text(self.heading_text.as_str(), Some(&self.font), f, 1.0);
+        let draw_text_params = TextParams {
+            font_size: f,
+            font: Some(&self.font),
+            color: BLACK,
+            ..Default::default()
+        };
+        draw_text_ex(
             self.heading_text.as_str(),
             self.heading_rect.x,
             self.heading_rect.y + dims.offset_y,
-            self.heading_font_size,
-            BLACK,
+            draw_text_params,
         );
     }
 
@@ -282,20 +289,25 @@ impl Game {
                 UiColor::Brown.to_bg_color(),
             );
 
-            let font_size = self.heading_font_size * 0.8;
+            let font_size = self.heading_font_size * 0.6;
             let rules = "\
                 Every move should be a \n\
                 capture. Win when only \n\
                 one piece is left.\n";
-            let measurement = measure_text(rules, None, font_size as u16, 1.0);
-            draw_multiline_text(
+            let measurement = measure_text(rules, Some(&self.font), font_size as u16, 1.0);
+            let draw_text_params = TextParams {
+                font_size: font_size as u16,
+                font: Some(&self.font),
+                color: UiColor::Brown.to_fg_color(),
+                ..Default::default()
+            };
+            draw_multiline_text_ex(
                 rules,
                 self.board_rect.x + 0.05 * self.square_width,
                 self.board_rect.y + 0.5 * (self.board_rect.h - measurement.height)
                     - 2. * measurement.offset_y,
-                font_size,
                 Some(2.),
-                UiColor::Brown.to_fg_color(),
+                draw_text_params,
             );
             return;
         }
@@ -400,7 +412,7 @@ impl Game {
 
         self.heading_font_size = 0.07 * min_dimension;
         let f = self.heading_font_size.floor() as u16;
-        let dims = measure_text(self.heading_text.as_str(), None, f, 1.0);
+        let dims = measure_text(self.heading_text.as_str(), Some(&self.font), f, 1.0);
         self.heading_rect = Rect::new(
             board_x + (board_width - dims.width) / 2.0,
             (board_y - dims.height) / 2.0,
@@ -444,6 +456,7 @@ impl Game {
             Rect::new(board_x + btn_reset_x_offset, btn_y, btn_w, btn_h),
             UiColor::Yellow,
             self.sounds.button.clone(),
+            self.font.clone(),
         );
 
         let btn_next_x_offset =
@@ -453,6 +466,7 @@ impl Game {
             Rect::new(board_x + btn_next_x_offset, btn_y, btn_w, btn_h),
             UiColor::Green,
             self.sounds.button.clone(),
+            self.font.clone(),
         );
         next_btn.is_active = false;
 
@@ -466,6 +480,7 @@ impl Game {
             ),
             UiColor::Brown,
             self.sounds.button.clone(),
+            self.font.clone(),
         );
         self.rules_btn = vec![rules_button];
 
@@ -483,6 +498,7 @@ impl Game {
             ),
             UiColor::Yellow,
             self.sounds.mode.clone(),
+            self.font.clone(),
         );
 
         let medium_btn = Button::new(
@@ -495,6 +511,7 @@ impl Game {
             ),
             UiColor::Yellow,
             self.sounds.mode.clone(),
+            self.font.clone(),
         );
 
         let hard_button = Button::new(
@@ -507,6 +524,7 @@ impl Game {
             ),
             UiColor::Yellow,
             self.sounds.mode.clone(),
+            self.font.clone(),
         );
 
         self.mode_btns = HashMap::new();
