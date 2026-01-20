@@ -1,1 +1,1 @@
-pub(crate) const BOARD_SIZE: usize = 4;
+pub const BOARD_SIZE: usize = 4;

@@ -1,29 +1,26 @@
+mod game;
+
 use game::{sound::Sounds, Game};
 use macroquad::{audio, prelude::*};
 use miniquad::date;
+use sol_chess::board;
 
-mod game;
+use game::constants;
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: get_window_title(),
+        window_title: constants::WINDOW_TITLE.to_string(),
         fullscreen: false,
         ..Default::default()
     }
 }
 
-#[cfg(debug_assertions)]
-fn get_window_title() -> String {
-    String::from("MOVE TO WORKSPACE 10")
-}
-
-#[cfg(not(debug_assertions))]
-fn get_window_title() -> String {
-    String::from("Solitaire Chess")
-}
-
 #[macroquad::main(window_conf)]
 async fn main() {
+    if board::constants::BOARD_SIZE != 4 {
+        panic!("NUM_SQUARES != 4 is not yet supported");
+    }
+
     rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
     let mut game = init().await;
@@ -67,5 +64,5 @@ async fn init() -> Game {
         panic!("Failed to load font");
     };
 
-    Game::new(texture_res, sounds, font)
+    Game::new_game(texture_res, sounds, font)
 }

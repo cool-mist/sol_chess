@@ -1,7 +1,7 @@
 use macroquad::audio::{self, Sound};
 use quad_snd::PlaySoundParams;
 
-use super::constants::VOLUME;
+use crate::constants::VOLUME;
 
 pub struct Sounds {
     pub click: Sound,

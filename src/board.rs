@@ -1,5 +1,5 @@
 pub mod cmove;
-mod constants;
+pub mod constants;
 pub mod errors;
 pub mod piece;
 pub mod square;
@@ -24,6 +24,7 @@ pub struct Board {
     pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
     pub legal_moves: HashSet<CMove>,
     pub game_state: BoardState,
+    pub id: String,
     pieces_remaining: u8,
 }
 
@@ -37,9 +38,12 @@ pub enum BoardState {
 
 impl Board {
     pub fn new() -> Self {
+        let cells = [[None; BOARD_SIZE]; BOARD_SIZE];
+        let id = Board::encode(cells);
         Board {
-            cells: [[None; BOARD_SIZE]; BOARD_SIZE],
+            cells,
             legal_moves: HashSet::new(),
+            id,
             pieces_remaining: 0,
             game_state: BoardState::NotStarted,
         }
@@ -147,16 +151,16 @@ impl Board {
     pub fn pretty_print(&self) {
         println!("{}", self.print(true));
         // println!("{:^40}\n", format!("id: {:#018x}", self.id()));
-        println!("{:^40}\n", format!("id: {}", self.id()));
+        println!("{:^40}\n", format!("id: {}", self.id));
     }
 
-    pub fn id(&self) -> String {
+    fn encode(cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE]) -> String {
         let mut res: u64 = 0;
 
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
                 res = res << 3;
-                let byte = Board::get_piece_encoding(self.cells[i][j]);
+                let byte = Board::get_piece_encoding(cells[i][j]);
                 res = res | byte as u64
             }
         }
@@ -320,6 +324,7 @@ impl Board {
     fn board_state_changed(&mut self) {
         self.calc_legal_moves();
         self.calc_game_state();
+        self.calc_id();
     }
 
     fn get_piece_encoding(piece: Option<Piece>) -> u8 {
@@ -347,6 +352,10 @@ impl Board {
             0b000 => Ok(None),
             _ => Err(SError::InvalidBoard),
         }
+    }
+
+    fn calc_id(&mut self) {
+        self.id = Board::encode(self.cells);
     }
 }
 
@@ -597,7 +606,7 @@ mod tests {
         board.set(sq!("Bd4"));
         board.set(sq!("Nc4"));
 
-        let id = board.id();
+        let id = board.id;
         let board2 = Board::from_id(&id);
         let board2 = board2.unwrap();
 
