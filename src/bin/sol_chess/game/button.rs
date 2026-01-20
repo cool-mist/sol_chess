@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use macroquad::{audio::Sound, prelude::*};
 
@@ -15,11 +15,11 @@ pub struct Button {
     shadow_width: f32,
     pub color: UiColor,
     sound: Sound,
-    font: Arc<Font>,
+    font: Rc<Font>,
 }
 
 impl Button {
-    pub fn new(text: &str, rect: Rect, color: UiColor, sound: Sound, font: Arc<Font>) -> Self {
+    pub fn new(text: &str, rect: Rect, color: UiColor, sound: Sound, font: Rc<Font>) -> Self {
         Self {
             text: text.to_string(),
             is_down: false,

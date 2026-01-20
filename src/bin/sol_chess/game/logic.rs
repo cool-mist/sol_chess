@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, rc::Rc};
 
 use super::{
     constants, sound::Sounds, Board, BoardState, ButtonAction, Game, GameMode, GameSquare,
@@ -6,7 +6,10 @@ use super::{
 };
 
 use macroquad::prelude::*;
-use sol_chess::{board, generator::{self, RandomRange}};
+use sol_chess::{
+    board,
+    generator::{self, RandomRange},
+};
 
 impl Game {
     fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
@@ -299,7 +302,7 @@ impl Game {
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
-            font: Arc::new(font),
+            font: Rc::new(font),
         }
     }
 }

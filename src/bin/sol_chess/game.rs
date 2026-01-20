@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
-    sync::Arc,
+    rc::Rc,
 };
 
 mod button;
@@ -28,7 +28,7 @@ pub struct Game {
     // Constants througout the game
     texture_res: Texture2D,
     sounds: Sounds,
-    font: Arc<Font>,
+    font: Rc<Font>,
     num_squares: usize,
     heading_text: String,
 

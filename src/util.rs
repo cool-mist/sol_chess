@@ -30,15 +30,9 @@ pub(crate) fn b64_decode_48(input: &[u8; 8], output: &mut [u8; 6]) {
 const ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 fn lookup(idx: u8) -> char {
-    ALPHABET
-        .chars()
-        .nth(idx as usize)
-        .unwrap()
+    ALPHABET.chars().nth(idx as usize).unwrap()
 }
 
 fn reverse_lookup(c: char) -> u8 {
-    ALPHABET
-        .chars()
-        .position(|x| x == c)
-        .unwrap() as u8
+    ALPHABET.chars().position(|x| x == c).unwrap() as u8
 }
