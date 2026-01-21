@@ -1,8 +1,8 @@
 use argh::FromArgs;
 
+use sol_chess::board::cmove::CMove;
 use sol_chess::board::Board;
-use sol_chess::generator::{self, RandomRange};
-use sol_chess::solver::Solver;
+use sol_chess::generator::{self, Puzzle, RandomRange};
 
 // Learn how to specify a different dependency for this binary
 struct MacroquadRngTodo;
@@ -14,37 +14,40 @@ impl RandomRange for MacroquadRngTodo {
 
 fn main() {
     let args: Args = argh::from_env();
-
     if args.generate {
         let puzzle = generate_puzzle(args.num_pieces, args.solutions);
-        let Some(board) = puzzle else {
+        let Some(puzzle) = puzzle else {
+            println!("Failed to generate a puzzle, try adjusting the generation parameters");
             return;
         };
 
-        board.pretty_print();
         if args.print {
-            solve_puzzle(board);
+            print_solutions(puzzle);
         }
-    } else {
-        let board = if let Some(board_string) = args.solve_board {
-            Board::from_string(board_string)
-        } else if let Some(board_id) = args.solve {
-            Board::from_id(&board_id)
-        } else {
-            println!("Use --help to see available options");
-            return;
-        };
-        let Ok(board) = board else {
-            println!("Invalid board string/id");
-            return;
-        };
-        board.pretty_print();
-        solve_puzzle(board);
+
+        return;
     }
+
+    let board = if let Some(board_string) = args.solve_board {
+        Board::from_string(board_string)
+    } else if let Some(board_id) = args.solve {
+        Board::from_id(&board_id)
+    } else {
+        println!("Use --help to see available options");
+        return;
+    };
+    let Ok(board) = board else {
+        println!("Invalid board string/id");
+        return;
+    };
+
+    let puzzle = board.solve();
+    print_solutions(puzzle);
 }
 
-fn solve_puzzle(board: Board) {
-    let solutions = Solver::new(board).solve();
+fn print_solutions(puzzle: Puzzle) {
+    puzzle.board.pretty_print();
+    let solutions = puzzle.solutions;
     if solutions.len() == 0 {
         println!("No solutions found");
         return;
@@ -55,10 +58,13 @@ fn solve_puzzle(board: Board) {
         idx += 1;
         println!("{}. {}", idx, m.notation());
     });
-    println!("There are atleast {} solutions to this puzzle", solutions.len());
+    println!(
+        "There are atleast {} solutions to this puzzle",
+        solutions.len()
+    );
 }
 
-fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Option<Board> {
+fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Option<Puzzle> {
     let mut num_pieces = num_pieces.unwrap_or(5);
     if num_pieces < 2 {
         num_pieces = 2;
@@ -76,12 +82,12 @@ fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Optio
     let gen = generator::generate(num_pieces, num_solutions, &MacroquadRngTodo);
     gen.print_stats();
 
-    let Some(board) = gen.board() else {
+    let Some(puzzle) = gen.puzzle() else {
         println!("Failed to generate a puzzle, try again");
         return None;
     };
 
-    Some(board)
+    Some(puzzle)
 }
 
 /// Solitaire Chess puzzle generator and solver

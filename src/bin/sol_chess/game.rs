@@ -15,15 +15,15 @@ mod texture;
 
 use button::Button;
 use macroquad::prelude::*;
-use sol_chess::board::{Board, BoardState};
+use sol_chess::{board::{Board, BoardState}, generator::Puzzle};
 use sound::Sounds;
 
 pub struct Game {
     // The generated puzzle. We keep a copy of this to reset the game.
-    original_board: Board,
+    puzzle: Puzzle,
 
     // What is shown to the user
-    board: Board,
+    current_board: Board,
 
     // Constants througout the game
     texture_res: Texture2D,

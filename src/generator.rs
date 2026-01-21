@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use crate::{
-    board::{piece::Piece, Board},
-    solver::Solver,
-};
+use crate::board::{cmove::CMove, piece::Piece, Board};
 
 pub trait RandomRange {
     fn gen_range(&self, min: usize, max: usize) -> usize;
@@ -35,7 +32,7 @@ pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) ->
     }
 
     let attempts: u32 = 1000;
-    let mut overall_stats = GenerateStats::new(0, 0, 0, None);
+    let mut overall_stats = GenerateStats::new(0, 0, 0, None, vec![]);
     for _ in 0..attempts {
         let stats = try_generate(num_pieces, num_solutions, rand, candidate_pieces.clone());
         overall_stats.piece_total += stats.piece_total;
@@ -50,20 +47,34 @@ pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) ->
     overall_stats
 }
 
+pub struct Puzzle {
+    pub board: Board,
+    pub solutions: Vec<Vec<CMove>>,
+    pub solved: bool,
+}
+
 pub struct GenerateStats {
     piece_total: u32,
     piece_success: u32,
     total: u32,
     board: Option<Board>,
+    solutions: Vec<Vec<CMove>>,
 }
 
 impl GenerateStats {
-    fn new(piece_total: u32, piece_success: u32, total: u32, board: Option<Board>) -> Self {
+    fn new(
+        piece_total: u32,
+        piece_success: u32,
+        total: u32,
+        board: Option<Board>,
+        solutions: Vec<Vec<CMove>>,
+    ) -> Self {
         Self {
             piece_total,
             piece_success,
             total,
             board,
+            solutions,
         }
     }
 
@@ -76,8 +87,18 @@ impl GenerateStats {
         println!("{}", stats);
     }
 
-    pub fn board(self) -> Option<Board> {
-        self.board
+    pub fn puzzle(self) -> Option<Puzzle> {
+        let Some(board) = self.board else {
+            return None;
+        };
+
+        let solved = self.solutions.len() > 0;
+
+        Some(Puzzle {
+            board,
+            solutions: self.solutions,
+            solved,
+        })
     }
 }
 
@@ -103,7 +124,7 @@ fn try_generate(
         let mut attempts = 15;
         while !placed {
             if attempts == 0 {
-                return GenerateStats::new(piece_total, piece_success, 1, None);
+                return GenerateStats::new(piece_total, piece_success, 1, None, vec![]);
             }
 
             attempts -= 1;
@@ -115,8 +136,8 @@ fn try_generate(
             let mut random_square = empty_squares[square_index].clone();
             random_square.piece = Some(piece);
             board.set(random_square.clone());
-            let solutions = Solver::new(board.clone()).solve();
-            if solutions.len() > 0 {
+            let puzzle = board.solve();
+            if puzzle.solutions.len() > 0 {
                 placed = true;
                 piece_success += 1;
                 candidate_pieces.remove(index);
@@ -128,17 +149,17 @@ fn try_generate(
         }
     }
 
-    let solutions = Solver::new(board.clone()).solve();
-    if solutions.len() > num_solutions as usize {
-        GenerateStats::new(piece_total, piece_success, 1, None)
+    let puzzle = board.solve();
+    if puzzle.solutions.len() > num_solutions as usize {
+        GenerateStats::new(piece_total, piece_success, 1, None, vec![])
     } else {
-        GenerateStats::new(piece_total, piece_success, 1, Some(board))
+        GenerateStats::new(piece_total, piece_success, 1, Some(puzzle.board), puzzle.solutions)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::BoardState, solver::Solver};
+    use crate::board::BoardState;
 
     use super::*;
 
@@ -158,9 +179,9 @@ mod tests {
             let board = gen_stats.board.expect("No puzzle was generated");
             assert_eq!(board.game_state, BoardState::InProgress);
 
-            let solutions = Solver::new(board).solve();
-            assert!(solutions.len() <= 5);
-            assert!(solutions.len() >= 1);
+            let puzzle = board.solve();
+            assert!(puzzle.solutions.len() <= 5);
+            assert!(puzzle.solutions.len() >= 1);
         }
     }
 }

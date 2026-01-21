@@ -1,14 +1,13 @@
 use std::{collections::HashMap, rc::Rc};
 
 use super::{
-    constants, sound::Sounds, Board, BoardState, ButtonAction, Game, GameMode, GameSquare,
-    GameState,
+    constants, sound::Sounds, BoardState, ButtonAction, Game, GameMode, GameSquare, GameState,
 };
 
 use macroquad::prelude::*;
 use sol_chess::{
     board,
-    generator::{self, RandomRange},
+    generator::{self, Puzzle, RandomRange},
 };
 
 impl Game {
@@ -139,7 +138,7 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self.current_board.cells[square.i][square.j] {
                     selected = Some((square.i, square.j));
                 }
             }
@@ -148,7 +147,7 @@ impl Game {
         if let Some((i, j)) = selected {
             self.get(i, j).is_source = true;
             let mut target_squares = vec![];
-            for m in self.board.legal_moves.iter() {
+            for m in self.current_board.legal_moves.iter() {
                 if m.from.file == i && m.from.rank == j {
                     target_squares.push((m.to.file, m.to.rank));
                 }
@@ -179,7 +178,7 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self.current_board.cells[square.i][square.j] {
                     selected = Some((square.i, square.j));
                 }
             }
@@ -202,17 +201,18 @@ impl Game {
         }
 
         if is_legal {
-            let m = self.board.legal_moves.iter().find(|m| {
+            let m = self.current_board.legal_moves.iter().find(|m| {
                 m.from.file == s_x && m.from.rank == s_y && m.to.file == x && m.to.rank == y
             });
 
             let m = m.expect("legal move should be found");
-            self.board.make_move(m.clone());
+            self.current_board.make_move(m.clone());
 
-            if self.board.game_state == BoardState::Won || self.board.game_state == BoardState::Lost
+            if self.current_board.game_state == BoardState::Won
+                || self.current_board.game_state == BoardState::Lost
             {
                 self.reset_squares();
-                if self.board.game_state == BoardState::Won {
+                if self.current_board.game_state == BoardState::Won {
                     let next_btn = self
                         .gp_btns
                         .get_mut(&ButtonAction::Next)
@@ -237,7 +237,7 @@ impl Game {
     }
 
     fn reset(&mut self) {
-        self.board = self.original_board.clone();
+        self.current_board = self.puzzle.board.clone();
         self.reset_squares();
 
         let next_button = self
@@ -251,9 +251,9 @@ impl Game {
 
     fn next_puzzle(&mut self) {
         self.reset();
-        let board = Game::generate_puzzle(self.game_mode);
-        self.original_board = board.clone();
-        self.board = board;
+        let puzzle = Game::generate_puzzle(self.game_mode);
+        self.current_board = puzzle.board.clone();
+        self.puzzle = puzzle;
     }
 
     fn reset_squares(&mut self) {
@@ -265,25 +265,27 @@ impl Game {
         }
     }
 
-    fn generate_puzzle(mode: GameMode) -> Board {
+    fn generate_puzzle(mode: GameMode) -> Puzzle {
         let piece_count = match mode {
             GameMode::Easy => 3,
             GameMode::Medium => 5,
             GameMode::Hard => 7,
         };
 
-        let generate = generator::generate(piece_count, 100, &MacroquadRandAdapter);
-        generate.board().expect("No puzzle was generated")
+        let generated = generator::generate(piece_count, 100, &MacroquadRandAdapter);
+        let puzzle = generated.puzzle();
+        puzzle.expect("No puzzle was generated")
     }
 
     pub fn new_game(texture_res: Texture2D, sounds: Sounds, font: Font) -> Self {
         let num_squares: usize = board::constants::BOARD_SIZE;
         let game_mode = GameMode::Medium;
-        let board = Game::generate_puzzle(game_mode);
+        let puzzle = Game::generate_puzzle(game_mode);
+        let current_board = puzzle.board.clone();
 
         Self {
-            original_board: board.clone(),
-            board,
+            puzzle,
+            current_board,
             board_rect: Rect::new(0., 0., 0., 0.),
             squares: Vec::new(),
             heading_rect: Rect::new(0., 0., 0., 0.),

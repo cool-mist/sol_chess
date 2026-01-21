@@ -249,7 +249,7 @@ impl Game {
                 color,
             );
 
-            if let Some(p) = &self.board.cells[square.i][square.j] {
+            if let Some(p) = &self.current_board.cells[square.i][square.j] {
                 let offset = (square.rect.w - sprite_size) / 2.0;
                 let dtp = PieceTexture::for_piece(*p, sprite_size);
                 if !square.is_source {
@@ -267,7 +267,7 @@ impl Game {
         });
 
         if let Some(selected_square) = selected_square {
-            if let Some(p) = self.board.cells[selected_square.i][selected_square.j] {
+            if let Some(p) = self.current_board.cells[selected_square.i][selected_square.j] {
                 let dtp = PieceTexture::for_piece(p, sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
@@ -306,7 +306,7 @@ impl Game {
                 return false;
             });
             debug_lines.push(format!("Game State: {}", self.state));
-            debug_lines.push(format!("Board State: {}", self.board.game_state));
+            debug_lines.push(format!("Board State: {}", self.current_board.game_state));
             if let Some(hover_square) = hover_square {
                 debug_lines.push(format!("Hover: [ {}, {} ]", hover_square.i, hover_square.j));
             }
