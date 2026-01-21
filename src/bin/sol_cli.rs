@@ -49,13 +49,13 @@ fn solve_puzzle(board: Board) {
         println!("No solutions found");
         return;
     }
-    println!("Found {} solutions", solutions.len());
     let solution = solutions.first().unwrap();
     let mut idx = 0;
     solution.iter().for_each(|m| {
         idx += 1;
         println!("{}. {}", idx, m.notation());
     });
+    println!("There are atleast {} solutions to this puzzle", solutions.len());
 }
 
 fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Option<Board> {

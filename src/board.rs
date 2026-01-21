@@ -50,6 +50,7 @@ impl Board {
     }
 
     pub fn from_id(board_id: &str) -> Result<Self, SError> {
+        // TODO: validate board_id before decode
         let mut board_id_bytes = [0; 8];
         board_id_bytes.copy_from_slice(board_id.as_bytes());
         let mut working_bytes_slice = [0; 6];
@@ -83,12 +84,12 @@ impl Board {
             for f in 0..BOARD_SIZE {
                 let c = chars.next().unwrap();
                 let piece = match c {
-                    'K' => Piece::King,
-                    'Q' => Piece::Queen,
-                    'B' => Piece::Bishop,
-                    'N' => Piece::Knight,
-                    'R' => Piece::Rook,
-                    'P' => Piece::Pawn,
+                    'K' | 'k' => Piece::King,
+                    'Q' | 'q' => Piece::Queen,
+                    'B' | 'b' => Piece::Bishop,
+                    'N' | 'n' => Piece::Knight,
+                    'R' | 'r' => Piece::Rook,
+                    'P' | 'p' => Piece::Pawn,
                     '.' => continue,
                     _ => return Err(SError::InvalidBoard),
                 };
