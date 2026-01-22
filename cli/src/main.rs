@@ -13,8 +13,9 @@ fn main() {
             return;
         };
 
+        puzzle.board.pretty_print();
         if args.print {
-            print_solutions(puzzle);
+            print_solutions(&puzzle);
         }
 
         return;
@@ -34,12 +35,12 @@ fn main() {
     };
 
     let puzzle = board.solve();
-    print_solutions(puzzle);
+    puzzle.board.pretty_print();
+    print_solutions(&puzzle);
 }
 
-fn print_solutions(puzzle: Puzzle) {
-    puzzle.board.pretty_print();
-    let solutions = puzzle.solutions;
+fn print_solutions(puzzle: &Puzzle) {
+    let solutions = &puzzle.solutions;
     if solutions.len() == 0 {
         println!("No solutions found");
         return;

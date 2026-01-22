@@ -15,10 +15,6 @@ Goal: Generate 'hard' puzzles.
 - Run `sol_chess` to start a windowed GUI game.
 - Run `sol_cli` to start the CLI tool.
 
-## Demo site
-
-- Play a demo of the game [here](https://games.neophyte.me/sol_chess/)
-
 ## CLI Usage
 
 - Generate a puzzle
@@ -26,46 +22,45 @@ Goal: Generate 'hard' puzzles.
 ```bash
 $ sol_cli -g -n 6
 Generating a puzzle with 6 pieces with a maximum of 5 solutions
-                Total attempts:     7
-           Total pieces placed:    71
-         Success pieces placed:    42
-               Total time (ms):    69
+                Total attempts:    16
+           Total pieces placed:   131
+         Success pieces placed:    96
 
-               ♘  .  .  .
+               ♙  ♗  .  .               
 
-               ♙  .  ♖  .
+               .  .  .  .               
 
-               ♔  .  ♘  ♙
+               ♗  ♖  .  .               
 
-               .  .  .  .
+               ♙  .  .  ♙               
 
 
-          id: 202859896274992
+              id: wmgYAAAG     
 ```
 
 - Solve a puzzle by ID, or by board string
 
 ```bash
-$ sol_cli --solve 202859896274992
-$ sol_cli --solve-board N...P.R.K.NP....
+$ sol_cli --solve wmgYAAAG
+$ sol_cli --solve-board pb......br..p..p
 
-               ♘  .  .  .
+               ♙  ♗  .  .               
 
-               ♙  .  ♖  .
+               .  .  .  .               
 
-               ♔  .  ♘  ♙
+               ♗  ♖  .  .               
 
-               .  .  .  .
+               ♙  .  .  ♙               
 
 
-          id: 202859896274992
+              id: wmgYAAAG              
 
-Found 3 solutions
-1. RxNc2
-2. RxPd2
-3. RxKa2
-4. RxPa3
-5. RxNa4
+1. RxBb4
+2. RxPa4
+3. RxBa2
+4. RxPa1
+5. RxPd1
+There are atleast 1 solutions to this puzzle
 
 ```
 
