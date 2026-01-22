@@ -1,5 +1,4 @@
 pub const WINDOW_TITLE: &str = "Solitaire Chess";
-pub const HEADING_TEXT: &str = "Solitaire Chess";
 pub const VOLUME: f32 = 0.1; // Between 0 and 1
 pub const SCREEN_HEIGHT_MIN: f32 = 200.0;
 pub const SCREEN_HEIGHT_MAX: f32 = 10000.0;
@@ -25,6 +24,7 @@ pub const BUTTON_WIDTH_MULTIPLIER: f32 = 0.20;
 // Gap between the bottom of the row and the first row of buttons
 pub const BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
 
+pub const HEADING_TEXT: &str = "Solitaire Chess";
 pub const RESET_BUTTON_TEXT: &str = "RESET";
 pub const NEXT_BUTTON_TEXT: &str = "NEXT";
 pub const RULES_BUTTON_TEXT: &str = "RULES";

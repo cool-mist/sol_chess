@@ -62,7 +62,7 @@ async fn init() -> Game {
         mode,
     };
 
-    let font_ttf = include_bytes!("../assets/caskaydia.ttf");
+    let font_ttf = include_bytes!("../assets/Junction-regular.otf");
     let Ok(font) = load_ttf_font_from_bytes(font_ttf) else {
         panic!("Failed to load font");
     };

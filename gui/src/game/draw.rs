@@ -220,7 +220,7 @@ impl Game {
             };
             draw_multiline_text_ex(
                 rules,
-                self.board_rect.x + 0.05 * self.square_width,
+                self.board_rect.x + 0.5 * self.square_width,
                 self.board_rect.y + 0.5 * (self.board_rect.h - measurement.height)
                     - 2. * measurement.offset_y,
                 Some(2.),

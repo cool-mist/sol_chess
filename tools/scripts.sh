@@ -43,7 +43,7 @@ build_web() {
   echo "Archive directory: ${ARCHIVE_DIR}"
 
   set -x
-  cargo build --target wasm32-unknown-unknown ${BUILD_PROFILE_SWITCH}
+  cargo build -p ${BINARY_NAME} --target wasm32-unknown-unknown ${BUILD_PROFILE_SWITCH}
   set +x
   if [ $? -ne 0 ]; then
       echo "Wasm build failed"
