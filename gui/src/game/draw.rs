@@ -48,7 +48,7 @@ impl Game {
         let dims = measure_text(self.heading_text.as_str(), Some(&self.font), f, 1.0);
         self.heading_rect = Rect::new(
             board_x + (board_width - dims.width) / 2.0,
-            (board_y - dims.height) / 2.0,
+            board_y - dims.height - constants::TOP_HEADING_OFFSET_MULTIPLIER * self.square_width,
             dims.width,
             dims.height,
         );
@@ -80,26 +80,28 @@ impl Game {
 
         self.squares = rects;
 
+        // Buttons
         let btn_h = constants::BUTTON_HEIGHT_MULTIPLIER * min_dimension;
         let btn_w = board_width * constants::BUTTON_WIDTH_MULTIPLIER;
-        let btn_y = board_width
+
+        // Bottom row
+        let bottom_row_y = board_width
             + board_y
             + constants::BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER * self.square_width;
         let btn_reset_x_offset =
             (self.board_rect.w - self.square_width) + (self.square_width - btn_w) / 2.;
         let reset_btn = Button::new(
             constants::RESET_BUTTON_TEXT,
-            Rect::new(board_x + btn_reset_x_offset, btn_y, btn_w, btn_h),
+            Rect::new(board_x + btn_reset_x_offset, bottom_row_y, btn_w, btn_h),
             UiColor::Yellow,
             self.sounds.button.clone(),
             self.font.clone(),
         );
-
         let btn_next_x_offset =
             (self.board_rect.w - 2. * self.square_width) + (self.square_width - btn_w) / 2.;
         let mut next_btn = Button::new(
             constants::NEXT_BUTTON_TEXT,
-            Rect::new(board_x + btn_next_x_offset, btn_y, btn_w, btn_h),
+            Rect::new(board_x + btn_next_x_offset, bottom_row_y, btn_w, btn_h),
             UiColor::Green,
             self.sounds.button.clone(),
             self.font.clone(),
@@ -110,11 +112,14 @@ impl Game {
         self.gp_btns.insert(ButtonAction::Next, next_btn);
         self.gp_btns.insert(ButtonAction::Reset, reset_btn);
 
+        // Left column
+        let left_column_x =
+            board_x - constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width - btn_w;
         let rules_button = Button::new(
             constants::RULES_BUTTON_TEXT,
             Rect::new(
-                (board_x - btn_w) / 2.,
-                board_y + (self.square_width - btn_h) / 2.,
+                left_column_x,
+                board_y + self.board_rect.h - self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
@@ -124,10 +129,14 @@ impl Game {
         );
         self.rules_btn = Some(rules_button);
 
+        // Right column
+        let right_column_x = board_x
+            + board_width
+            + constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width;
         let easy_btn = Button::new(
             constants::EASY_BUTTON_TEXT,
             Rect::new(
-                (board_x - btn_w) / 2.,
+                right_column_x,
                 board_y + self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
@@ -140,7 +149,7 @@ impl Game {
         let medium_btn = Button::new(
             constants::MEDIUM_BUTTON_TEXT,
             Rect::new(
-                (board_x - btn_w) / 2.,
+                right_column_x,
                 board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
@@ -153,7 +162,7 @@ impl Game {
         let hard_button = Button::new(
             constants::HARD_BUTTON_TEXT,
             Rect::new(
-                (board_x - btn_w) / 2.,
+                right_column_x,
                 board_y + 3. * self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,

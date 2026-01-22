@@ -21,8 +21,14 @@ pub const BUTTON_HEIGHT_MULTIPLIER: f32 = 0.08;
 // Width of the button relative to the 'board size'
 pub const BUTTON_WIDTH_MULTIPLIER: f32 = 0.20;
 
-// Gap between the bottom of the row and the first row of buttons
+// Gap between the bottom of the board and the first row of buttons
 pub const BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
+
+// Gap between the right of the board and the first row of buttons
+pub const BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
+
+// Gap between the top of the board and the heading
+pub const TOP_HEADING_OFFSET_MULTIPLIER: f32 = 0.5;
 
 pub const HEADING_TEXT: &str = "Solitaire Chess";
 pub const RESET_BUTTON_TEXT: &str = "RESET";
