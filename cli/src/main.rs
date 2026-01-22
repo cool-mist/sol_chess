@@ -1,16 +1,8 @@
 use argh::FromArgs;
 
-use sol_chess::board::cmove::CMove;
-use sol_chess::board::Board;
-use sol_chess::generator::{self, Puzzle, RandomRange};
-
-// Learn how to specify a different dependency for this binary
-struct MacroquadRngTodo;
-impl RandomRange for MacroquadRngTodo {
-    fn gen_range(&self, min: usize, max: usize) -> usize {
-        macroquad::rand::gen_range(min, max)
-    }
-}
+use rand::Rng;
+use sol_lib::board::Board;
+use sol_lib::generator::{self, Puzzle, RandomRange};
 
 fn main() {
     let args: Args = argh::from_env();
@@ -79,10 +71,10 @@ fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Optio
         "Generating a puzzle with {} pieces with a maximum of {} solutions",
         num_pieces, num_solutions
     );
-    let gen = generator::generate(num_pieces, num_solutions, &MacroquadRngTodo);
-    gen.print_stats();
+    let gen_result = generator::generate(num_pieces, num_solutions, &RandRngImpl);
+    gen_result.print_stats();
 
-    let Some(puzzle) = gen.puzzle() else {
+    let Some(puzzle) = gen_result.puzzle() else {
         println!("Failed to generate a puzzle, try again");
         return None;
     };
@@ -117,4 +109,11 @@ struct Args {
     #[argh(option)]
     /// the board to solve in board representation
     solve_board: Option<String>,
+}
+
+struct RandRngImpl;
+impl RandomRange for RandRngImpl {
+    fn gen_range(&self, min: usize, max: usize) -> usize {
+        rand::rng().random_range(min..max)
+    }
 }

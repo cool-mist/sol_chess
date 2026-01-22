@@ -1,15 +1,22 @@
 mod game;
 
-use game::{sound::Sounds, Game};
+use game::{Game, sound::Sounds};
 use macroquad::{audio, prelude::*};
 use miniquad::date;
-use sol_chess::board;
 
 use game::constants;
 
 fn window_conf() -> Conf {
+    let window_title = {
+        if cfg!(debug_assertions) {
+            "Debug: Puzzle Game"
+        } else {
+            constants::WINDOW_TITLE
+        }
+    };
+
     Conf {
-        window_title: constants::WINDOW_TITLE.to_string(),
+        window_title: String::from(window_title),
         fullscreen: false,
         ..Default::default()
     }
@@ -17,10 +24,6 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    if board::constants::BOARD_SIZE != 4 {
-        panic!("NUM_SQUARES != 4 is not yet supported");
-    }
-
     rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
     let mut game = init().await;

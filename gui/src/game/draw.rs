@@ -1,10 +1,9 @@
+use super::{
+    ButtonAction, Game, GameMode, button::Button, color::UiColor, constants, shadow,
+    texture::PieceTexture,
+};
 use macroquad::{math, prelude::*};
 use std::collections::HashMap;
-
-use super::{
-    button::Button, color::UiColor, constants, shadow, texture::PieceTexture, ButtonAction, Game,
-    GameMode,
-};
 
 impl Game {
     pub fn draw(&mut self) {

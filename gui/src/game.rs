@@ -15,7 +15,7 @@ mod texture;
 
 use button::Button;
 use macroquad::prelude::*;
-use sol_chess::{board::{Board, BoardState}, generator::Puzzle};
+use sol_lib::{board::Board, generator::Puzzle};
 use sound::Sounds;
 
 pub struct Game {

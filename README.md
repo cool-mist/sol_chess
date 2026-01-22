@@ -4,8 +4,6 @@ Goal: Generate 'hard' puzzles.
 
 ### Play a demo of the game [here](https://games.neophyte.me/sol_chess/)
 
-![img](./img/sol_chess.png)
-
 ## Install
 
 - Install Rust from [here](https://www.rust-lang.org/tools/install).

@@ -1,5 +1,5 @@
 pub mod cmove;
-pub mod constants;
+mod constants;
 pub mod errors;
 pub mod piece;
 pub mod square;
@@ -25,6 +25,7 @@ pub struct Board {
     pub legal_moves: HashSet<CMove>,
     pub game_state: BoardState,
     pub id: String,
+    pub size: usize,
     pieces_remaining: u8,
 }
 
@@ -46,6 +47,7 @@ impl Board {
             id,
             pieces_remaining: 0,
             game_state: BoardState::NotStarted,
+            size: BOARD_SIZE,
         }
     }
 
@@ -503,9 +505,7 @@ mod tests {
     }
 
     macro_rules! mv {
-        ($from:literal, $to:literal) => {{
-            CMove::new(sq!($from), sq!($to))
-        }};
+        ($from:literal, $to:literal) => {{ CMove::new(sq!($from), sq!($to)) }};
     }
 
     macro_rules! validate_board {

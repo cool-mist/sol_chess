@@ -1,10 +1,6 @@
-use std::rc::Rc;
-
+use super::{color::UiColor, shadow::draw_shadow, sound::Sounds};
 use macroquad::{audio::Sound, prelude::*};
-
-use crate::game::sound::Sounds;
-
-use super::{color::UiColor, shadow::draw_shadow};
+use std::rc::Rc;
 
 pub struct Button {
     pub is_active: bool,

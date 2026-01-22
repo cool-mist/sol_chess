@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 
+#[allow(unused)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UiColor {
     Grey,

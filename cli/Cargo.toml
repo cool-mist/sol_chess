@@ -1,0 +1,16 @@
+[package]
+name = "sol_cli"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+sol_lib = { path = "../lib" }
+argh = { workspace = true }
+rand = { workspace = true }
+
+[profile.release]
+opt-level = 's'
+lto = true
+codegen-units = 1
+panic = 'abort'
+strip = true

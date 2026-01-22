@@ -1,9 +1,4 @@
-#[cfg(not(debug_assertions))]
 pub const WINDOW_TITLE: &str = "Solitaire Chess";
-
-#[cfg(debug_assertions)]
-pub const WINDOW_TITLE: &str = "MOVE TO WORKSPACE 10";
-
 pub const HEADING_TEXT: &str = "Solitaire Chess";
 pub const VOLUME: f32 = 0.1; // Between 0 and 1
 pub const SCREEN_HEIGHT_MIN: f32 = 200.0;

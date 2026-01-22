@@ -1,5 +1,5 @@
 use macroquad::prelude::*;
-use sol_chess::board::piece::Piece;
+use sol_lib::board::piece::Piece;
 
 pub struct PieceTexture {
     x: f32,

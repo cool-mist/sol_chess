@@ -1,14 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
-
-use super::{
-    constants, sound::Sounds, BoardState, ButtonAction, Game, GameMode, GameSquare, GameState,
-};
-
+use super::{ButtonAction, Game, GameMode, GameSquare, GameState, constants, sound::Sounds};
 use macroquad::prelude::*;
-use sol_chess::{
-    board,
+use sol_lib::{
+    board::BoardState,
     generator::{self, Puzzle, RandomRange},
 };
+use std::{collections::HashMap, rc::Rc};
 
 impl Game {
     fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
@@ -278,11 +274,10 @@ impl Game {
     }
 
     pub fn new_game(texture_res: Texture2D, sounds: Sounds, font: Font) -> Self {
-        let num_squares: usize = board::constants::BOARD_SIZE;
         let game_mode = GameMode::Medium;
         let puzzle = Game::generate_puzzle(game_mode);
         let current_board = puzzle.board.clone();
-
+        let num_squares: usize = current_board.size;
         Self {
             puzzle,
             current_board,

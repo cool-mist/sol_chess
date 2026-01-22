@@ -1,20 +1,13 @@
-[package]
-name = "sol_chess"
-version = "0.1.1"
-edition = "2021"
-default-run = "sol_chess"
+[workspace]
+members = [
+    "lib",
+    "cli",
+    "gui",
+]
+resolver = "3"
 
-[dependencies]
+[workspace.dependencies]
 argh = "0.1.13"
 macroquad = { version = "0.4.13", features = ["audio"] }
 quad-snd = "0.2.8"
-
-[dev-dependencies]
 rand = "0.9.1"
-
-[profile.release]
-opt-level = 's'
-lto = true
-codegen-units = 1
-panic = 'abort'
-strip = true
