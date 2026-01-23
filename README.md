@@ -64,11 +64,3 @@ $ sol_cli --solve-board pb......br..p..p
 There are atleast 1 solutions to this puzzle
 
 ```
-
-## Heuristics of current algorithm
-
-1. About 6-7 pieces on the board.
-2. Select pieces to place based on its weight.
-    3. Eg: Queen is too powerful, so it has lower weightage.
-    4. Eg: Knights are confusing. More knights.
-

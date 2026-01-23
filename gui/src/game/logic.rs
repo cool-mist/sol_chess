@@ -1,10 +1,13 @@
-use super::{ButtonAction, Game, GameMode, GameSquare, GameState, constants, sound::Sounds};
+use super::{Game, GameMode, GameSquare, GameState, constants};
+use crate::{
+    resources::{Resources, SoundKind},
+    widgets::{button::Button, *},
+};
 use macroquad::prelude::*;
 use sol_lib::{
     board::BoardState,
     generator::{self, Puzzle, RandomRange},
 };
-use std::{collections::HashMap, rc::Rc};
 
 impl Game {
     fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
@@ -12,89 +15,17 @@ impl Game {
     }
 
     pub fn handle_input(&mut self) {
-        let mut gp_btn_clicked = None;
-        for btn in &mut self.gp_btns {
-            btn.1.handle_input();
-            if btn.1.is_clicked() {
-                gp_btn_clicked = Some(btn.0.clone());
-                break;
-            }
-        }
-
-        if let Some(action) = gp_btn_clicked {
-            match action {
-                ButtonAction::Reset => self.reset(),
-                ButtonAction::Next => self.next_puzzle(),
-            }
-        } else {
-            let mut mode_btn_clicked = None;
-            for btn in &mut self.mode_btns {
-                btn.1.handle_input();
-                if btn.1.is_clicked() {
-                    mode_btn_clicked = Some(btn);
-                    break;
-                }
-            }
-
-            if let Some(btn) = mode_btn_clicked {
-                self.game_mode = *btn.0;
-                self.next_puzzle();
-            } else {
-                let mut rules_btn_clicked = false;
-                if let Some(btn) = &mut self.rules_btn {
-                    btn.handle_input();
-                    if btn.is_clicked() {
-                        rules_btn_clicked = true;
-                    }
-                }
-
-                if rules_btn_clicked {
-                    self.rules = !self.rules;
-                }
-            }
-        }
-
-        for btn in &mut self.mode_btns {
-            if self.game_mode == *btn.0 {
-                btn.1.is_active = false;
-            } else {
-                btn.1.is_active = true;
-            }
-        }
-
-        if is_key_released(KeyCode::Escape) {
-            if self.rules {
-                Sounds::play(&self.sounds.button);
-            }
-
-            self.rules = false;
-        }
-
-        if let Some(rules_btn) = &mut self.rules_btn {
-            if self.rules {
-                rules_btn.text = constants::RULES_BUTTON_ALT_TEXT.to_string();
-            } else {
-                rules_btn.text = constants::RULES_BUTTON_TEXT.to_string();
-            }
-        }
-
-        if is_key_released(KeyCode::D) {
-            self.debug = !self.debug;
-            return;
-        }
-
-        if is_key_released(KeyCode::Q) {
-            std::process::exit(0);
-        }
-
+        // CORE GAMEPLAY
+        let (mouse_x, mouse_y) = mouse_position();
+        let mouse_pos = Circle::new(mouse_x, mouse_y, 0.0);
         if is_mouse_button_released(MouseButton::Left) {
             let current_state = self.state.clone();
             let new_state = match current_state {
                 GameState::SelectSource(previous_target) => {
-                    self.handle_select_source(mouse_position(), previous_target)
+                    self.handle_select_source(mouse_pos, previous_target)
                 }
                 GameState::SelectTarget(source) => {
-                    let next = self.handle_select_target(mouse_position(), source);
+                    let next = self.handle_select_target(mouse_pos, source);
                     if let GameState::SelectTarget(_) = next {
                         self.reset_squares();
                         GameState::SelectSource(None)
@@ -105,15 +36,15 @@ impl Game {
 
                 GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
             };
+
             self.state = new_state;
-            return;
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
             let current_state = self.state.clone();
             let new_state = match current_state {
                 GameState::SelectSource(previous_target) => {
-                    self.handle_select_source(mouse_position(), previous_target)
+                    self.handle_select_source(mouse_pos, previous_target)
                 }
                 GameState::SelectTarget(source) => GameState::SelectTarget(source),
                 GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
@@ -121,19 +52,108 @@ impl Game {
 
             self.state = new_state;
         }
+
+        if (self
+            .reset_btn
+            .handle_input(&self.resources.sound(&SoundKind::Button), self.volume))
+        .is_clicked
+        {
+            self.reset();
+            return;
+        }
+
+        if (self
+            .next_btn
+            .handle_input(&self.resources.sound(&SoundKind::Button), self.volume))
+        .is_clicked
+        {
+            self.next_puzzle();
+            return;
+        }
+
+        // PRESETS
+        let mut clicked_game_mode_btn: Option<&Button> = None;
+        if (self
+            .easy_btn
+            .handle_input(&self.resources.sound(&SoundKind::Mode), self.volume))
+        .is_clicked
+        {
+            self.game_mode = GameMode::Easy;
+            self.easy_btn.is_active = false;
+            self.medium_btn.is_active = true;
+            self.hard_btn.is_active = true;
+            clicked_game_mode_btn = Some(&self.easy_btn);
+        } else if (self
+            .medium_btn
+            .handle_input(&self.resources.sound(&SoundKind::Mode), self.volume))
+        .is_clicked
+        {
+            self.game_mode = GameMode::Medium;
+            self.easy_btn.is_active = true;
+            self.medium_btn.is_active = false;
+            self.hard_btn.is_active = true;
+            clicked_game_mode_btn = Some(&self.medium_btn);
+        } else if (self
+            .hard_btn
+            .handle_input(&self.resources.sound(&SoundKind::Mode), self.volume))
+        .is_clicked
+        {
+            self.game_mode = GameMode::Hard;
+            self.easy_btn.is_active = true;
+            self.medium_btn.is_active = true;
+            self.hard_btn.is_active = false;
+            clicked_game_mode_btn = Some(&self.hard_btn);
+        }
+
+        if let Some(_) = clicked_game_mode_btn {
+            self.next_puzzle();
+            return;
+        }
+
+        if (self
+            .rules_btn
+            .handle_input(&self.resources.sound(&SoundKind::Button), self.volume))
+        .is_clicked
+        {
+            self.show_rules = !self.show_rules;
+            self.rules_text = match self.show_rules {
+                true => constants::RULES_BUTTON_ALT_TEXT.to_string(),
+                false => constants::RULES_BUTTON_TEXT.to_string(),
+            };
+
+            return;
+        }
+
+        // KEY INPUTS
+        if is_key_released(KeyCode::Escape) {
+            if self.show_rules {
+                play_sound_once(&self.resources.sound(&SoundKind::Button), self.volume);
+                self.show_rules = false;
+                self.rules_text = constants::RESET_BUTTON_TEXT.to_string();
+            }
+
+            return;
+        }
+
+        if is_key_released(KeyCode::D) {
+            self.debug = !self.debug;
+            return;
+        }
+
+        if is_key_released(KeyCode::Q) {
+            std::process::exit(0);
+        }
     }
 
     fn handle_select_source(
         &mut self,
-        mouse_position: (f32, f32),
+        mouse_pos: Circle,
         previous_target: Option<(usize, usize)>,
     ) -> GameState {
         self.reset_squares();
-        let (x, y) = mouse_position;
-        let mouse = Circle::new(x, y, 0.0);
         let mut selected = None;
         for square in &mut self.squares {
-            if mouse.overlaps_rect(&square.rect) {
+            if mouse_pos.overlaps_rect(&square.rect) {
                 if let Some(_) = self.current_board.cells[square.i][square.j] {
                     selected = Some((square.i, square.j));
                 }
@@ -163,17 +183,10 @@ impl Game {
         return GameState::SelectSource(None);
     }
 
-    fn handle_select_target(
-        &mut self,
-        mouse_position: (f32, f32),
-        source: (usize, usize),
-    ) -> GameState {
-        let (x, y) = mouse_position;
-        let mouse = Circle::new(x, y, 0.0);
-
+    fn handle_select_target(&mut self, mouse_pos: Circle, source: (usize, usize)) -> GameState {
         let mut selected = None;
         for square in &mut self.squares {
-            if mouse.overlaps_rect(&square.rect) {
+            if mouse_pos.overlaps_rect(&square.rect) {
                 if let Some(_) = self.current_board.cells[square.i][square.j] {
                     selected = Some((square.i, square.j));
                 }
@@ -209,14 +222,10 @@ impl Game {
             {
                 self.reset_squares();
                 if self.current_board.game_state == BoardState::Won {
-                    let next_btn = self
-                        .gp_btns
-                        .get_mut(&ButtonAction::Next)
-                        .expect("Cannot find next button");
-                    next_btn.is_active = true;
-                    Sounds::play(&self.sounds.win);
+                    self.next_btn.is_active = true;
+                    play_sound_once(&self.resources.sound(&SoundKind::Win), self.volume);
                 } else {
-                    Sounds::play(&self.sounds.loss);
+                    play_sound_once(&self.resources.sound(&SoundKind::Loss), self.volume);
                 }
 
                 return GameState::GameOver((x, y));
@@ -224,7 +233,7 @@ impl Game {
 
             self.reset_squares();
             self.get(x, y).is_target = true;
-            Sounds::play(&self.sounds.click);
+            play_sound_once(&self.resources.sound(&SoundKind::Click), self.volume);
             return GameState::SelectSource(Some((x, y)));
         }
 
@@ -234,15 +243,9 @@ impl Game {
 
     fn reset(&mut self) {
         self.current_board = self.puzzle.board.clone();
-        self.reset_squares();
-
-        let next_button = self
-            .gp_btns
-            .get_mut(&ButtonAction::Next)
-            .expect("Cannot find next button");
-        next_button.is_active = false;
-
+        self.next_btn.is_active = false;
         self.state = GameState::SelectSource(None);
+        self.reset_squares();
     }
 
     fn next_puzzle(&mut self) {
@@ -268,12 +271,13 @@ impl Game {
             GameMode::Hard => 7,
         };
 
-        let generated = generator::generate(piece_count, 100, &MacroquadRandAdapter);
+        let generated =
+            generator::generate_weighted_random(piece_count, 100, &MacroquadRandAdapter);
         let puzzle = generated.puzzle();
         puzzle.expect("No puzzle was generated")
     }
 
-    pub fn new_game(texture_res: Texture2D, sounds: Sounds, font: Font) -> Self {
+    pub fn new_game(resources: Resources) -> Self {
         let game_mode = GameMode::Medium;
         let puzzle = Game::generate_puzzle(game_mode);
         let current_board = puzzle.board.clone();
@@ -281,25 +285,12 @@ impl Game {
         Self {
             puzzle,
             current_board,
-            board_rect: Rect::new(0., 0., 0., 0.),
-            squares: Vec::new(),
-            heading_rect: Rect::new(0., 0., 0., 0.),
-            heading_text: constants::HEADING_TEXT.to_string(),
-            heading_font_size: 0.,
-            num_squares,
-            texture_res,
-            sounds,
-            state: GameState::SelectSource(None),
+            resources,
             game_mode,
-            debug: false,
-            gp_btns: HashMap::new(),
-            mode_btns: HashMap::new(),
-            rules: false,
-            rules_btn: None,
-            window_height: 0.,
-            window_width: 0.,
-            square_width: 0.,
-            font: Rc::new(font),
+            num_squares,
+            heading_text: constants::HEADING_TEXT.to_string(),
+            volume: constants::VOLUME,
+            ..Self::default()
         }
     }
 }

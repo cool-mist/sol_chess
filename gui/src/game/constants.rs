@@ -31,8 +31,8 @@ pub const BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
 pub const TOP_HEADING_OFFSET_MULTIPLIER: f32 = 0.5;
 
 pub const HEADING_TEXT: &str = "Solitaire Chess";
-pub const RESET_BUTTON_TEXT: &str = "RESET";
-pub const NEXT_BUTTON_TEXT: &str = "NEXT";
+pub const RESET_BUTTON_TEXT: &str = "R";
+pub const NEXT_BUTTON_TEXT: &str = "N";
 pub const RULES_BUTTON_TEXT: &str = "RULES";
 pub const RULES_BUTTON_ALT_TEXT: &str = "CLOSE";
 pub const EASY_BUTTON_TEXT: &str = "EASY";

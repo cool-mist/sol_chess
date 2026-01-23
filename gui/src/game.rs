@@ -1,55 +1,52 @@
-use std::{
-    collections::HashMap,
-    fmt::{self, Display, Formatter},
-    rc::Rc,
-};
-
-mod button;
-mod color;
 pub mod constants;
 mod draw;
 mod logic;
-mod shadow;
-pub mod sound;
-mod texture;
 
-use button::Button;
+use crate::{
+    resources::Resources,
+    widgets::{button::Button, id_text_input::IdTextInput},
+};
 use macroquad::prelude::*;
 use sol_lib::{board::Board, generator::Puzzle};
-use sound::Sounds;
+use std::fmt::{self, Display, Formatter};
 
+#[derive(Default)]
 pub struct Game {
-    // The generated puzzle. We keep a copy of this to reset the game.
+    resources: Resources,
+
+    volume: f32,
+
     puzzle: Puzzle,
-
-    // What is shown to the user
-    current_board: Board,
-
-    // Constants througout the game
-    texture_res: Texture2D,
-    sounds: Sounds,
-    font: Rc<Font>,
-    num_squares: usize,
-    heading_text: String,
-
-    // Update below on handle input
     state: GameState,
     debug: bool,
-    game_mode: GameMode,
 
-    // Update below on window resize
-    // Used for drawing the state
-    square_width: f32,
     window_height: f32,
     window_width: f32,
+
+    current_board: Board,
+    square_width: f32,
+    num_squares: usize, // this is a constant = 4 for now.
     board_rect: Rect,
     squares: Vec<GameSquare>,
+
     heading_rect: Rect,
     heading_font_size: f32,
-    gp_btns: HashMap<ButtonAction, Button>,
-    mode_btns: HashMap<GameMode, Button>,
-    rules: bool,
-    rules_btn: Option<Button>,
+    heading_text: String,
+
+    show_rules: bool,
+    rules_text: String,
+    rules_btn: Button,
+
+    id_text: IdTextInput,
+
+    reset_btn: Button,
+
+    next_btn: Button,
+
+    game_mode: GameMode,
+    easy_btn: Button,
+    medium_btn: Button,
+    hard_btn: Button,
 }
 
 struct GameSquare {
@@ -63,16 +60,16 @@ struct GameSquare {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum ButtonAction {
-    Reset,
-    Next,
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum GameMode {
     Easy,
     Medium,
     Hard,
+}
+
+impl Default for GameMode {
+    fn default() -> Self {
+        GameMode::Medium
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -80,6 +77,12 @@ enum GameState {
     SelectSource(Option<(usize, usize)>),
     SelectTarget((usize, usize)),
     GameOver((usize, usize)),
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState::SelectSource(None)
+    }
 }
 
 impl Display for GameState {

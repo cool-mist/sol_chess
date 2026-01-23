@@ -1,12 +1,31 @@
 use std::fmt::Display;
 
-use crate::board::{cmove::CMove, piece::Piece, Board};
+use crate::board::{Board, cmove::CMove, piece::Piece};
 
 pub trait RandomRange {
     fn gen_range(&self, min: usize, max: usize) -> usize;
 }
 
-pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) -> GenerateStats {
+#[derive(Default)]
+pub struct Puzzle {
+    pub board: Board,
+    pub solutions: Vec<Vec<CMove>>,
+    pub solved: bool,
+}
+
+pub struct GenerateStats {
+    piece_total: u32,
+    piece_success: u32,
+    total: u32,
+    board: Option<Board>,
+    solutions: Vec<Vec<CMove>>,
+}
+
+pub fn generate_weighted_random(
+    num_pieces: u32,
+    num_solutions: u32,
+    rand: &impl RandomRange,
+) -> GenerateStats {
     let candidate_pieces = vec![
         Piece::Pawn,
         Piece::Pawn,
@@ -45,20 +64,6 @@ pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) ->
     }
 
     overall_stats
-}
-
-pub struct Puzzle {
-    pub board: Board,
-    pub solutions: Vec<Vec<CMove>>,
-    pub solved: bool,
-}
-
-pub struct GenerateStats {
-    piece_total: u32,
-    piece_success: u32,
-    total: u32,
-    board: Option<Board>,
-    solutions: Vec<Vec<CMove>>,
 }
 
 impl GenerateStats {
@@ -153,7 +158,13 @@ fn try_generate(
     if puzzle.solutions.len() > num_solutions as usize {
         GenerateStats::new(piece_total, piece_success, 1, None, vec![])
     } else {
-        GenerateStats::new(piece_total, piece_success, 1, Some(puzzle.board), puzzle.solutions)
+        GenerateStats::new(
+            piece_total,
+            piece_success,
+            1,
+            Some(puzzle.board),
+            puzzle.solutions,
+        )
     }
 }
 
@@ -175,7 +186,7 @@ mod tests {
     #[test]
     fn generator_smoke() {
         for _ in 0..10 {
-            let gen_stats = generate(5, 5, &TestRandom);
+            let gen_stats = generate_weighted_random(5, 5, &TestRandom);
             let board = gen_stats.board.expect("No puzzle was generated");
             assert_eq!(board.game_state, BoardState::InProgress);
 

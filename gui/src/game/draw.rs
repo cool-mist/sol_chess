@@ -1,9 +1,7 @@
-use super::{
-    ButtonAction, Game, GameMode, button::Button, color::UiColor, constants, shadow,
-    texture::PieceTexture,
-};
+use super::{Game, GameMode, constants};
+use crate::widgets::{button::Button, id_text_input::IdTextInput, *};
 use macroquad::{math, prelude::*};
-use std::collections::HashMap;
+use sol_lib::board::piece::Piece;
 
 impl Game {
     pub fn draw(&mut self) {
@@ -11,6 +9,7 @@ impl Game {
         self.draw_heading();
         self.draw_board();
         self.draw_buttons();
+        self.draw_id_text();
         self.draw_debug();
     }
 
@@ -45,7 +44,12 @@ impl Game {
 
         self.heading_font_size = constants::HEADING_FONT_SIZE_MULTIPLIER * min_dimension;
         let f = self.heading_font_size.floor() as u16;
-        let dims = measure_text(self.heading_text.as_str(), Some(&self.font), f, 1.0);
+        let dims = measure_text(
+            self.heading_text.as_str(),
+            Some(&self.resources.font()),
+            f,
+            1.0,
+        );
         self.heading_rect = Rect::new(
             board_x + (board_width - dims.width) / 2.0,
             board_y - dims.height - constants::TOP_HEADING_OFFSET_MULTIPLIER * self.square_width,
@@ -83,114 +87,95 @@ impl Game {
         // Buttons
         let btn_h = constants::BUTTON_HEIGHT_MULTIPLIER * min_dimension;
         let btn_w = board_width * constants::BUTTON_WIDTH_MULTIPLIER;
+        let btn_w_sq = btn_h;
 
         // Bottom row
         let bottom_row_y = board_width
             + board_y
             + constants::BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER * self.square_width;
-        let btn_reset_x_offset =
-            (self.board_rect.w - self.square_width) + (self.square_width - btn_w) / 2.;
-        let reset_btn = Button::new(
-            constants::RESET_BUTTON_TEXT,
-            Rect::new(board_x + btn_reset_x_offset, bottom_row_y, btn_w, btn_h),
-            UiColor::Yellow,
-            self.sounds.button.clone(),
-            self.font.clone(),
-        );
+        self.reset_btn = Button::new(Rect::new(
+            board_x + (self.square_width - btn_w_sq) / 2.,
+            bottom_row_y,
+            btn_w_sq,
+            btn_h,
+        ));
         let btn_next_x_offset =
-            (self.board_rect.w - 2. * self.square_width) + (self.square_width - btn_w) / 2.;
-        let mut next_btn = Button::new(
-            constants::NEXT_BUTTON_TEXT,
-            Rect::new(board_x + btn_next_x_offset, bottom_row_y, btn_w, btn_h),
-            UiColor::Green,
-            self.sounds.button.clone(),
-            self.font.clone(),
-        );
-        next_btn.is_active = false;
+            (self.board_rect.w - self.square_width) + (self.square_width - btn_w_sq) / 2.;
+        self.next_btn = Button::new(Rect::new(
+            board_x + btn_next_x_offset,
+            bottom_row_y,
+            btn_w_sq,
+            btn_h,
+        ));
+        self.next_btn.is_active = false;
 
-        self.gp_btns = HashMap::new();
-        self.gp_btns.insert(ButtonAction::Next, next_btn);
-        self.gp_btns.insert(ButtonAction::Reset, reset_btn);
+        let id_text_rect = Rect::new(
+            board_x + 2. * self.square_width - btn_w,
+            bottom_row_y,
+            btn_w * 2.,
+            btn_h,
+        );
+        self.id_text = IdTextInput::new(id_text_rect);
 
         // Left column
         let left_column_x =
             board_x - constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width - btn_w;
-        let rules_button = Button::new(
-            constants::RULES_BUTTON_TEXT,
-            Rect::new(
-                left_column_x,
-                board_y + self.board_rect.h - self.square_width + (self.square_width - btn_h) / 2.,
-                btn_w,
-                btn_h,
-            ),
-            UiColor::Brown,
-            self.sounds.button.clone(),
-            self.font.clone(),
-        );
-        self.rules_btn = Some(rules_button);
+        self.rules_btn = Button::new(Rect::new(
+            left_column_x,
+            board_y + self.board_rect.h - self.square_width + (self.square_width - btn_h) / 2.,
+            btn_w,
+            btn_h,
+        ));
 
         // Right column
         let right_column_x = board_x
             + board_width
             + constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width;
-        let easy_btn = Button::new(
-            constants::EASY_BUTTON_TEXT,
-            Rect::new(
-                right_column_x,
-                board_y + self.square_width + (self.square_width - btn_h) / 2.,
-                btn_w,
-                btn_h,
-            ),
-            UiColor::Yellow,
-            self.sounds.mode.clone(),
-            self.font.clone(),
-        );
+        self.easy_btn = Button::new(Rect::new(
+            right_column_x,
+            board_y + self.square_width + (self.square_width - btn_h) / 2.,
+            btn_w,
+            btn_h,
+        ));
 
-        let medium_btn = Button::new(
-            constants::MEDIUM_BUTTON_TEXT,
-            Rect::new(
-                right_column_x,
-                board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
-                btn_w,
-                btn_h,
-            ),
-            UiColor::Yellow,
-            self.sounds.mode.clone(),
-            self.font.clone(),
-        );
+        self.medium_btn = Button::new(Rect::new(
+            right_column_x,
+            board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
+            btn_w,
+            btn_h,
+        ));
 
-        let hard_button = Button::new(
-            constants::HARD_BUTTON_TEXT,
-            Rect::new(
-                right_column_x,
-                board_y + 3. * self.square_width + (self.square_width - btn_h) / 2.,
-                btn_w,
-                btn_h,
-            ),
-            UiColor::Yellow,
-            self.sounds.mode.clone(),
-            self.font.clone(),
-        );
+        self.hard_btn = Button::new(Rect::new(
+            right_column_x,
+            board_y + 3. * self.square_width + (self.square_width - btn_h) / 2.,
+            btn_w,
+            btn_h,
+        ));
 
-        self.mode_btns = HashMap::new();
-        self.mode_btns.insert(GameMode::Easy, easy_btn);
-        self.mode_btns.insert(GameMode::Medium, medium_btn);
-        self.mode_btns.insert(GameMode::Hard, hard_button);
-
-        for btn in &mut self.mode_btns {
-            btn.1.is_active = true;
-            if self.game_mode == *btn.0 {
-                btn.1.is_active = false;
+        match self.game_mode {
+            GameMode::Easy => {
+                self.easy_btn.is_active = false;
+            }
+            GameMode::Medium => {
+                self.medium_btn.is_active = false;
+            }
+            GameMode::Hard => {
+                self.hard_btn.is_active = false;
             }
         }
     }
 
     fn draw_heading(&self) {
         let f = self.heading_font_size.floor() as u16;
-        let dims = measure_text(self.heading_text.as_str(), Some(&self.font), f, 1.0);
+        let dims = measure_text(
+            self.heading_text.as_str(),
+            Some(&self.resources.font()),
+            f,
+            1.0,
+        );
         let draw_text_params = TextParams {
             font_size: f,
-            font: Some(&self.font),
+            font: Some(&self.resources.font()),
             color: BLACK,
             ..Default::default()
         };
@@ -204,9 +189,9 @@ impl Game {
 
     fn draw_board(&self) {
         let board_shadow_width = constants::BOARD_SHADOW_MULTIPLIER * self.square_width;
-        shadow::draw_shadow(self.board_rect, board_shadow_width);
+        draw_shadow(&self.board_rect, board_shadow_width);
 
-        if self.rules {
+        if self.show_rules {
             draw_rectangle(
                 self.board_rect.x,
                 self.board_rect.y,
@@ -220,10 +205,11 @@ impl Game {
                 Every move should be a \n\
                 capture. Win when only \n\
                 one piece is left.\n";
-            let measurement = measure_text(rules, Some(&self.font), font_size as u16, 1.0);
+            let measurement =
+                measure_text(rules, Some(&self.resources.font()), font_size as u16, 1.0);
             let draw_text_params = TextParams {
                 font_size: font_size as u16,
-                font: Some(&self.font),
+                font: Some(&self.resources.font()),
                 color: UiColor::Brown.to_bg_color(),
                 ..Default::default()
             };
@@ -259,14 +245,14 @@ impl Game {
 
             if let Some(p) = &self.current_board.cells[square.i][square.j] {
                 let offset = (square.rect.w - sprite_size) / 2.0;
-                let dtp = PieceTexture::for_piece(*p, sprite_size);
+                let texture_params = self.piece_draw_texture_params(&p, sprite_size);
                 if !square.is_source {
                     draw_texture_ex(
-                        &self.texture_res,
+                        texture_params.texture,
                         square.rect.x + offset,
                         square.rect.y + offset,
                         WHITE,
-                        dtp,
+                        texture_params.draw_text_params,
                     );
                 } else {
                     selected_square = Some(square);
@@ -276,30 +262,80 @@ impl Game {
 
         if let Some(selected_square) = selected_square {
             if let Some(p) = self.current_board.cells[selected_square.i][selected_square.j] {
-                let dtp = PieceTexture::for_piece(p, sprite_size);
+                let texture_params = self.piece_draw_texture_params(&p, sprite_size);
                 draw_texture_ex(
-                    &self.texture_res,
+                    texture_params.texture,
                     mouse_position().0 - sprite_size / 2.0,
                     mouse_position().1 - sprite_size / 2.0,
                     WHITE,
-                    dtp,
+                    texture_params.draw_text_params,
                 );
             }
         }
     }
 
+    fn piece_draw_texture_params<'a>(
+        &'a self,
+        piece: &Piece,
+        sprite_size: f32,
+    ) -> PieceDrawTextureParams<'a> {
+        let texture = self.resources.get_piece_texture(&piece);
+        let dtp = DrawTextureParams {
+            source: Some(Rect::new(
+                texture.texture_rect.x,
+                texture.texture_rect.y,
+                texture.texture_rect.w,
+                texture.texture_rect.h,
+            )),
+            dest_size: Some(Vec2::new(sprite_size, sprite_size)),
+            ..DrawTextureParams::default()
+        };
+
+        PieceDrawTextureParams {
+            texture: texture.texture,
+            draw_text_params: dtp,
+        }
+    }
+
     fn draw_buttons(&mut self) {
-        for btn in &self.gp_btns {
-            btn.1.draw();
-        }
+        self.reset_btn.draw(
+            constants::RESET_BUTTON_TEXT,
+            &UiColor::Yellow,
+            &self.resources.font(),
+        );
+        self.next_btn.draw(
+            constants::NEXT_BUTTON_TEXT,
+            &UiColor::Green,
+            &self.resources.font(),
+        );
+        self.easy_btn.draw(
+            constants::EASY_BUTTON_TEXT,
+            &UiColor::Yellow,
+            &self.resources.font(),
+        );
+        self.medium_btn.draw(
+            constants::MEDIUM_BUTTON_TEXT,
+            &UiColor::Yellow,
+            &self.resources.font(),
+        );
+        self.hard_btn.draw(
+            constants::HARD_BUTTON_TEXT,
+            &UiColor::Yellow,
+            &self.resources.font(),
+        );
 
-        for btn in &self.mode_btns {
-            btn.1.draw();
-        }
+        let rules_btn_text = if self.show_rules {
+            constants::RULES_BUTTON_ALT_TEXT
+        } else {
+            constants::RULES_BUTTON_TEXT
+        };
+        self.rules_btn
+            .draw(rules_btn_text, &UiColor::Brown, &self.resources.font());
+    }
 
-        if let Some(btn) = &self.rules_btn {
-            btn.draw();
-        }
+    fn draw_id_text(&self) {
+        self.id_text
+            .draw(&self.resources.font(), &self.puzzle.board.id);
     }
 
     fn draw_debug(&self) {
@@ -342,4 +378,9 @@ impl Game {
             BLACK,
         );
     }
+}
+
+struct PieceDrawTextureParams<'a> {
+    texture: &'a Texture2D,
+    draw_text_params: DrawTextureParams,
 }
