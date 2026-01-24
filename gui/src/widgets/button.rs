@@ -1,4 +1,4 @@
-use crate::widgets::*;
+use crate::{resources::Resources, widgets::*};
 use macroquad::{audio::Sound, prelude::*};
 
 pub struct ButtonWidget {
@@ -13,18 +13,21 @@ pub struct ButtonInteraction {
 }
 
 impl ButtonWidget {
-    pub fn new(rect: Rect) -> Self {
+    pub fn initialize_state(is_active: bool) -> Self {
         Self {
-            is_down: false,
-            is_active: true,
-            rect,
-            shadow_width: 5.0,
+            is_active,
+            ..Default::default()
         }
     }
 
-    pub fn draw(&self, text: &str, color: &UiColor, font: &Font) {
+    pub fn initialize_drawables(&mut self, rect: Rect) {
+        self.rect = rect;
+        self.shadow_width = 5.0;
+    }
+
+    pub fn draw(&self, text: &str, color: &UiColor, resources: &Resources) {
         self.draw_button(color);
-        self.draw_label(text, font, color);
+        self.draw_label(text, resources, color);
     }
 
     fn draw_button(&self, color: &UiColor) {
@@ -56,12 +59,13 @@ impl ButtonWidget {
         draw_shadow(&self.rect, self.shadow_width);
     }
 
-    fn draw_label(&self, text: &str, font: &Font, color: &UiColor) {
+    fn draw_label(&self, text: &str, resources: &Resources, color: &UiColor) {
         let font_color = match self.is_active {
             true => color.to_fg_color(),
             false => Color::from_rgba(100, 100, 100, 255),
         };
 
+        let font = resources.font();
         let font_size = (0.2 * self.rect.w) as u16;
         let dims = measure_text(&text, Some(&font), font_size, 1.0);
         let button_draw_offset = self.get_button_draw_offset();
@@ -124,7 +128,7 @@ impl ButtonWidget {
 impl Default for ButtonWidget {
     fn default() -> Self {
         Self {
-            is_active: Default::default(),
+            is_active: true,
             is_down: Default::default(),
             rect: Default::default(),
             shadow_width: Default::default(),

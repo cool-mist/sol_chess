@@ -1,4 +1,4 @@
-use crate::widgets::*;
+use crate::{resources::Resources, widgets::*};
 use macroquad::prelude::*;
 
 pub struct IdTextInput {
@@ -38,12 +38,13 @@ impl IdTextInput {
         }
     }
 
-    pub fn draw(&self, font: &Font, text: &str) {
+    pub fn draw(&self, resources: &Resources, text: &str) {
         draw_rect(&self.text_rect, self.color);
         draw_rect(&self.copy_box_rect, self.copy_color);
         draw_rect(&self.paste_box_rect, self.paste_color);
         draw_shadow(&self.rect, self.shadow_width);
 
+        let font = resources.font();
         let font_size = (0.15 * self.text_rect.w) as u16;
         let text_dims = measure_text(text, Some(font), font_size, 1.0);
         draw_text_ex(

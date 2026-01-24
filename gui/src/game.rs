@@ -2,21 +2,14 @@ pub mod constants;
 mod draw;
 mod logic;
 
-use crate::{
-    game::logic::{GameMode, GameState},
-    resources::Resources,
-    widgets::*,
-};
+use crate::{resources::Resources, widgets::*};
 use macroquad::prelude::*;
-use sol_lib::{board::Board, generator::Puzzle};
+use sol_lib::generator::Puzzle;
 
 #[derive(Default)]
 pub struct Game {
     resources: Resources,
-
-    volume: f32,
-
-    debug: bool,
+    settings: GameSettings,
 
     window_height: f32,
     window_width: f32,
@@ -26,12 +19,7 @@ pub struct Game {
     reset_btn: ButtonWidget,
     next_btn: ButtonWidget,
 
-    current_board: Board,
-    square_width: f32,
-    num_squares: usize, // this is a constant = 4 for now.
-    board_rect: Rect,
-    squares: Vec<GameSquare>,
-    state: GameState,
+    board: BoardWidget,
 
     heading_rect: Rect,
     heading_font_size: f32,
@@ -47,12 +35,21 @@ pub struct Game {
     hard_btn: ButtonWidget,
 }
 
-struct GameSquare {
-    rect: Rect,
-    color: Color,
-    is_source: bool,
-    is_target: bool,
-    is_previous_target: bool,
-    i: usize,
-    j: usize,
+#[derive(Default)]
+pub struct GameSettings {
+    pub volume: f32,
+    pub debug: bool,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum GameMode {
+    Easy,
+    Medium,
+    Hard,
+}
+
+impl Default for GameMode {
+    fn default() -> Self {
+        GameMode::Medium
+    }
 }
