@@ -1,7 +1,7 @@
-use macroquad::{audio::Sound, prelude::*};
 use crate::widgets::*;
+use macroquad::{audio::Sound, prelude::*};
 
-pub struct Button {
+pub struct ButtonWidget {
     pub is_active: bool,
     is_down: bool,
     rect: Rect,
@@ -12,7 +12,7 @@ pub struct ButtonInteraction {
     pub is_clicked: bool,
 }
 
-impl Button {
+impl ButtonWidget {
     pub fn new(rect: Rect) -> Self {
         Self {
             is_down: false,
@@ -121,7 +121,7 @@ impl Button {
     }
 }
 
-impl Default for Button {
+impl Default for ButtonWidget {
     fn default() -> Self {
         Self {
             is_active: Default::default(),

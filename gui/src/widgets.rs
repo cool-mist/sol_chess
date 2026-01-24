@@ -1,5 +1,8 @@
-pub mod button;
-pub mod id_text_input;
+mod button;
+pub use button::*;
+
+mod id_text_input;
+pub use id_text_input::*;
 
 use macroquad::{
     audio::{self, Sound},

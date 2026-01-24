@@ -1,13 +1,49 @@
-use super::{Game, GameMode, GameSquare, GameState, constants};
-use crate::{
-    resources::{Resources, SoundKind},
-    widgets::{button::Button, *},
-};
+use super::{Game, GameSquare, constants};
+use crate::{resources::*, widgets::*};
+use core::fmt;
 use macroquad::prelude::*;
 use sol_lib::{
     board::BoardState,
     generator::{self, Puzzle, RandomRange},
 };
+use std::fmt::{Display, Formatter};
+
+#[derive(Copy, Clone)]
+pub enum GameState {
+    SelectSource(Option<(usize, usize)>),
+    SelectTarget((usize, usize)),
+    GameOver((usize, usize)),
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState::SelectSource(None)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum GameMode {
+    Easy,
+    Medium,
+    Hard,
+}
+
+impl Default for GameMode {
+    fn default() -> Self {
+        GameMode::Medium
+    }
+}
+
+impl Display for GameState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            GameState::SelectSource(Some(x)) => write!(f, "Select Source [ {}, {} ]", x.0, x.1),
+            GameState::SelectSource(None) => write!(f, "Select Source [ ]"),
+            GameState::SelectTarget(x) => write!(f, "Select Target [ {}, {} ]", x.0, x.1),
+            GameState::GameOver(x) => write!(f, "Game Over [ {}, {} ]", x.0, x.1),
+        }
+    }
+}
 
 impl Game {
     fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
@@ -72,7 +108,7 @@ impl Game {
         }
 
         // PRESETS
-        let mut clicked_game_mode_btn: Option<&Button> = None;
+        let mut clicked_game_mode_btn: Option<&ButtonWidget> = None;
         if (self
             .easy_btn
             .handle_input(&self.resources.sound(&SoundKind::Mode), self.volume))
@@ -295,7 +331,7 @@ impl Game {
     }
 }
 
-pub struct MacroquadRandAdapter;
+struct MacroquadRandAdapter;
 impl RandomRange for MacroquadRandAdapter {
     fn gen_range(&self, min: usize, max: usize) -> usize {
         rand::gen_range(min, max)

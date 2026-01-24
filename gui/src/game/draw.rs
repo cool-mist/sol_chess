@@ -1,5 +1,5 @@
 use super::{Game, GameMode, constants};
-use crate::widgets::{button::Button, id_text_input::IdTextInput, *};
+use crate::widgets::*;
 use macroquad::{math, prelude::*};
 use sol_lib::board::piece::Piece;
 
@@ -93,7 +93,7 @@ impl Game {
         let bottom_row_y = board_width
             + board_y
             + constants::BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER * self.square_width;
-        self.reset_btn = Button::new(Rect::new(
+        self.reset_btn = ButtonWidget::new(Rect::new(
             board_x + (self.square_width - btn_w_sq) / 2.,
             bottom_row_y,
             btn_w_sq,
@@ -101,7 +101,7 @@ impl Game {
         ));
         let btn_next_x_offset =
             (self.board_rect.w - self.square_width) + (self.square_width - btn_w_sq) / 2.;
-        self.next_btn = Button::new(Rect::new(
+        self.next_btn = ButtonWidget::new(Rect::new(
             board_x + btn_next_x_offset,
             bottom_row_y,
             btn_w_sq,
@@ -120,7 +120,7 @@ impl Game {
         // Left column
         let left_column_x =
             board_x - constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width - btn_w;
-        self.rules_btn = Button::new(Rect::new(
+        self.rules_btn = ButtonWidget::new(Rect::new(
             left_column_x,
             board_y + self.board_rect.h - self.square_width + (self.square_width - btn_h) / 2.,
             btn_w,
@@ -131,21 +131,21 @@ impl Game {
         let right_column_x = board_x
             + board_width
             + constants::BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER * self.square_width;
-        self.easy_btn = Button::new(Rect::new(
+        self.easy_btn = ButtonWidget::new(Rect::new(
             right_column_x,
             board_y + self.square_width + (self.square_width - btn_h) / 2.,
             btn_w,
             btn_h,
         ));
 
-        self.medium_btn = Button::new(Rect::new(
+        self.medium_btn = ButtonWidget::new(Rect::new(
             right_column_x,
             board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
             btn_w,
             btn_h,
         ));
 
-        self.hard_btn = Button::new(Rect::new(
+        self.hard_btn = ButtonWidget::new(Rect::new(
             right_column_x,
             board_y + 3. * self.square_width + (self.square_width - btn_h) / 2.,
             btn_w,
