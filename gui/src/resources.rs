@@ -2,13 +2,14 @@ use macroquad::{
     audio::{self, Sound},
     prelude::*,
 };
-use sol_lib::board::piece::Piece;
+use sol_lib::board::piece::{Piece, PieceKind};
 use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct Resources {
     texture_pieces: Option<Texture2D>,
-    texture_rects_pieces: HashMap<Piece, Rect>,
+    texture_rects_pieces: HashMap<PieceKind, Rect>,
+    texture_rects_inactive_pieces: HashMap<PieceKind, Rect>,
 
     sounds: HashMap<SoundKind, Sound>,
 
@@ -52,32 +53,43 @@ pub async fn init() -> Resources {
     texture_pieces.set_filter(FilterMode::Nearest);
     build_textures_atlas();
 
-    let mut texture_rects_pieces = HashMap::new();
-    texture_rects_pieces.insert(Piece::Pawn, piece_texture_rect(Piece::Pawn));
-    texture_rects_pieces.insert(Piece::Knight, piece_texture_rect(Piece::Knight));
-    texture_rects_pieces.insert(Piece::Bishop, piece_texture_rect(Piece::Bishop));
-    texture_rects_pieces.insert(Piece::Rook, piece_texture_rect(Piece::Rook));
-    texture_rects_pieces.insert(Piece::Queen, piece_texture_rect(Piece::Queen));
-    texture_rects_pieces.insert(Piece::King, piece_texture_rect(Piece::King));
+    let texture_rects_pieces = generate_texture_rects_pieces(true);
+    let texture_rects_inactive_pieces = generate_texture_rects_pieces(false);
 
     Resources {
         texture_pieces: Some(texture_pieces),
         texture_rects_pieces,
+        texture_rects_inactive_pieces,
         sounds,
         font: Some(font),
     }
 }
 
-fn piece_texture_rect(piece: Piece) -> Rect {
+fn generate_texture_rects_pieces(active: bool) -> HashMap<PieceKind, Rect> {
+    let mut texture_rects_pieces = HashMap::new();
+    texture_rects_pieces.insert(PieceKind::Pawn, piece_texture_rect(PieceKind::Pawn, active));
+    texture_rects_pieces.insert(PieceKind::Knight, piece_texture_rect(PieceKind::Knight, active));
+    texture_rects_pieces.insert(PieceKind::Bishop, piece_texture_rect(PieceKind::Bishop, active));
+    texture_rects_pieces.insert(PieceKind::Rook, piece_texture_rect(PieceKind::Rook, active));
+    texture_rects_pieces.insert(PieceKind::Queen, piece_texture_rect(PieceKind::Queen, active));
+    texture_rects_pieces.insert(PieceKind::King, piece_texture_rect(PieceKind::King, active));
+
+    texture_rects_pieces
+}
+
+fn piece_texture_rect(piece: PieceKind, active: bool) -> Rect {
     let index = match piece {
-        Piece::Pawn => 0,
-        Piece::Knight => 1,
-        Piece::Bishop => 2,
-        Piece::Rook => 3,
-        Piece::Queen => 4,
-        Piece::King => 5,
+        PieceKind::Pawn => 0,
+        PieceKind::Knight => 1,
+        PieceKind::Bishop => 2,
+        PieceKind::Rook => 3,
+        PieceKind::Queen => 4,
+        PieceKind::King => 5,
     };
-    let color = 0;
+    let color = match active {
+        true => 1,
+        false => 0,
+    };
     Rect::new(index as f32 * 128.0, color as f32 * 128.0, 128.0, 128.0)
 }
 
@@ -93,7 +105,13 @@ pub enum SoundKind {
 impl Resources {
     pub fn get_piece_texture<'a>(&'a self, piece: &Piece) -> Texture<'a> {
         let texture = self.texture_pieces.as_ref().unwrap();
-        let texture_rect = self.texture_rects_pieces.get(piece).unwrap();
+        let texture_rects_lookup = if piece.active {
+            &self.texture_rects_pieces
+        } else {
+            &self.texture_rects_inactive_pieces
+        };
+
+        let texture_rect = texture_rects_lookup.get(&piece.kind).unwrap();
         Texture {
             texture: texture,
             texture_rect: *texture_rect,

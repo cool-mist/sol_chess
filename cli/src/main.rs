@@ -72,7 +72,8 @@ fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Optio
         "Generating a puzzle with {} pieces with a maximum of {} solutions",
         num_pieces, num_solutions
     );
-    let gen_result = generator::generate_weighted_random(num_pieces, num_solutions, &RandRngImpl);
+    let gen_result =
+        generator::generate_weighted_random(num_pieces, num_solutions, num_pieces, &RandRngImpl);
     gen_result.print_stats();
 
     let Some(puzzle) = gen_result.puzzle() else {

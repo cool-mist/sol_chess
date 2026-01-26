@@ -66,8 +66,19 @@ impl ButtonWidget {
         };
 
         let font = resources.font();
-        let font_size = (0.2 * self.rect.w) as u16;
-        let dims = measure_text(&text, Some(&font), font_size, 1.0);
+        let mut dim_width = self.rect.w;
+        let mut font_size = 30.0;
+        let mut dims = measure_text(&text, Some(&font), font_size as u16, 1.0);
+        loop {
+            if dim_width <= self.rect.w * 0.8 {
+                break;
+            }
+
+            dims = measure_text(&text, Some(&font), font_size as u16, 1.0);
+            dim_width = dims.width;
+            font_size -= 2.0;
+        }
+
         let button_draw_offset = self.get_button_draw_offset();
 
         let text_params = TextParams {

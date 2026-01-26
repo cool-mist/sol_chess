@@ -5,13 +5,22 @@ mod button;
 pub use button::*;
 
 mod id_text_input;
-pub use id_text_input::*;
+
+mod label;
+pub use label::*;
+
+mod counter;
+pub use counter::*;
 
 use macroquad::{
     audio::{self, Sound},
     prelude::*,
 };
 use quad_snd::PlaySoundParams;
+
+pub struct WidgetInput {
+    pub mouse_pos: Circle,
+}
 
 #[allow(unused)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

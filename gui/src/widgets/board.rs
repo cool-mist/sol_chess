@@ -28,10 +28,6 @@ pub struct BoardInteraction<'a> {
 }
 
 impl BoardWidget {
-    fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
-        &mut self.squares[i * self.num_squares + j]
-    }
-
     pub fn initialize_state(num_squares: usize, current_board: Board) -> BoardWidget {
         let mut board = BoardWidget::default();
         board.num_squares = num_squares;
@@ -71,11 +67,11 @@ impl BoardWidget {
         self.squares = rects;
     }
 
-    pub fn draw(&self, show_rules: bool, rules_font_size: f32, resources: &Resources, settings: &GameSettings) {
+    pub fn draw(&self, params: &BoardDrawParams, resources: &Resources, settings: &GameSettings) {
         let board_shadow_width = constants::BOARD_SHADOW_MULTIPLIER * self.square_width;
         draw_shadow(&self.board_rect, board_shadow_width);
 
-        if show_rules {
+        if params.show_rules {
             draw_rectangle(
                 self.board_rect.x,
                 self.board_rect.y,
@@ -84,11 +80,13 @@ impl BoardWidget {
                 UiColor::Yellow.to_bg_color(),
             );
 
-            let font_size = rules_font_size * 0.6;
+            let font_size = params.rules_font_size * 0.4;
             let rules = "\
                 Every move should be a \n\
                 capture. Win when only \n\
-                one piece is left.\n";
+                one piece is left.\n\
+                Age: Each piece can only \n\
+                move 'age' times";
             let measurement = measure_text(rules, Some(resources.font()), font_size as u16, 1.0);
             let draw_text_params = TextParams {
                 font_size: font_size as u16,
@@ -99,7 +97,7 @@ impl BoardWidget {
             draw_multiline_text_ex(
                 rules,
                 self.board_rect.x + 0.5 * self.square_width,
-                self.board_rect.y + 0.5 * (self.board_rect.h - measurement.height)
+                self.board_rect.y + 0.4 * (self.board_rect.h - measurement.height)
                     - 2. * measurement.offset_y,
                 Some(2.),
                 draw_text_params,
@@ -159,6 +157,10 @@ impl BoardWidget {
         if settings.debug {
             self.draw_debug();
         }
+    }
+
+    fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
+        &mut self.squares[i * self.num_squares + j]
     }
 
     fn draw_debug(&self) {
@@ -419,4 +421,9 @@ fn piece_draw_texture_params<'a>(
 struct PieceDrawTextureParams<'a> {
     texture: &'a Texture2D,
     draw_text_params: DrawTextureParams,
+}
+
+pub struct BoardDrawParams {
+    pub show_rules: bool,
+    pub rules_font_size: f32,
 }

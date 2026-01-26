@@ -14,10 +14,10 @@ use std::{
 use cmove::CMove;
 use constants::BOARD_SIZE;
 use errors::SError;
-use piece::Piece;
+use piece::PieceKind;
 use square::{Square, SquarePair};
 
-use crate::generator::Puzzle;
+use crate::{board::piece::Piece, generator::Puzzle};
 
 #[derive(Clone, Default)]
 pub struct Board {
@@ -27,6 +27,7 @@ pub struct Board {
     pub id: String,
     pub size: usize,
     pieces_remaining: u8,
+    max_moves_per_piece: u32,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -43,8 +44,19 @@ impl Default for BoardState {
     }
 }
 
+pub struct BoardOptions {
+    pub max_moves_per_piece: u32,
+}
+
 impl Board {
     pub fn new() -> Self {
+        let options = BoardOptions {
+            max_moves_per_piece: 2,
+        };
+        Board::create(options)
+    }
+
+    pub fn create(options: BoardOptions) -> Self {
         let cells = [[None; BOARD_SIZE]; BOARD_SIZE];
         let id = Board::encode(cells);
         Board {
@@ -54,6 +66,7 @@ impl Board {
             pieces_remaining: 0,
             game_state: BoardState::NotStarted,
             size: BOARD_SIZE,
+            max_moves_per_piece: options.max_moves_per_piece,
         }
     }
 
@@ -72,10 +85,10 @@ impl Board {
         let mask = 0b111;
         for i in (0..BOARD_SIZE).rev() {
             for j in (0..BOARD_SIZE).rev() {
-                let piece = Board::get_piece_from_encoding((working & mask) as u8);
+                let piece_kind = Board::get_piece_from_encoding((working & mask) as u8);
                 working = working >> 3;
-                let piece = piece?;
-                board.set(Square::new(i, j, piece));
+                let piece_kind = piece_kind?;
+                board.set(Square::new(i, j, Piece::from_kind(piece_kind)));
             }
         }
         Ok(board)
@@ -91,18 +104,18 @@ impl Board {
         for r in 0..BOARD_SIZE {
             for f in 0..BOARD_SIZE {
                 let c = chars.next().unwrap();
-                let piece = match c {
-                    'K' | 'k' => Piece::King,
-                    'Q' | 'q' => Piece::Queen,
-                    'B' | 'b' => Piece::Bishop,
-                    'N' | 'n' => Piece::Knight,
-                    'R' | 'r' => Piece::Rook,
-                    'P' | 'p' => Piece::Pawn,
+                let piece_kind = match c {
+                    'K' | 'k' => PieceKind::King,
+                    'Q' | 'q' => PieceKind::Queen,
+                    'B' | 'b' => PieceKind::Bishop,
+                    'N' | 'n' => PieceKind::Knight,
+                    'R' | 'r' => PieceKind::Rook,
+                    'P' | 'p' => PieceKind::Pawn,
                     '.' => continue,
                     _ => return Err(SError::InvalidBoard),
                 };
 
-                let square = Square::new(f, r, Some(piece));
+                let square = Square::new(f, r, Some(Piece::new(piece_kind)));
                 board.set(square);
             }
         }
@@ -137,7 +150,14 @@ impl Board {
             return None;
         }
 
-        let from_piece = mem::replace(&mut self.cells[mv.from.file][mv.from.rank], None);
+        let mut from_piece = mem::replace(&mut self.cells[mv.from.file][mv.from.rank], None);
+        if let Some(p) = &mut from_piece {
+            p.moves_made += 1;
+            if p.moves_made >= self.max_moves_per_piece {
+                p.active = false;
+            }
+        }
+
         self.cells[mv.to.file][mv.to.rank] = from_piece;
 
         self.pieces_remaining -= 1;
@@ -278,13 +298,17 @@ impl Board {
             return None;
         };
 
-        let legal = match piece {
-            Piece::King => self.is_king_legal(&pair),
-            Piece::Queen => self.is_queen_legal(&pair),
-            Piece::Bishop => self.is_bishop_legal(&pair),
-            Piece::Knight => self.is_knight_legal(&pair),
-            Piece::Rook => self.is_rook_legal(&pair),
-            Piece::Pawn => self.is_pawn_legal(&pair),
+        if piece.moves_made >= self.max_moves_per_piece {
+            return None;
+        }
+
+        let legal = match piece.kind {
+            PieceKind::King => self.is_king_legal(&pair),
+            PieceKind::Queen => self.is_queen_legal(&pair),
+            PieceKind::Bishop => self.is_bishop_legal(&pair),
+            PieceKind::Knight => self.is_knight_legal(&pair),
+            PieceKind::Rook => self.is_rook_legal(&pair),
+            PieceKind::Pawn => self.is_pawn_legal(&pair),
         };
 
         if legal {
@@ -400,26 +424,26 @@ impl Board {
 
     fn get_piece_encoding(piece: Option<Piece>) -> u8 {
         match piece {
-            Some(p) => match p {
-                Piece::King => 0b001,
-                Piece::Queen => 0b010,
-                Piece::Rook => 0b011,
-                Piece::Bishop => 0b100,
-                Piece::Knight => 0b101,
-                Piece::Pawn => 0b110,
+            Some(p) => match p.kind {
+                PieceKind::King => 0b001,
+                PieceKind::Queen => 0b010,
+                PieceKind::Rook => 0b011,
+                PieceKind::Bishop => 0b100,
+                PieceKind::Knight => 0b101,
+                PieceKind::Pawn => 0b110,
             },
             None => 0b000,
         }
     }
 
-    fn get_piece_from_encoding(encoding: u8) -> Result<Option<Piece>, SError> {
+    fn get_piece_from_encoding(encoding: u8) -> Result<Option<PieceKind>, SError> {
         match encoding {
-            0b001 => Ok(Some(Piece::King)),
-            0b010 => Ok(Some(Piece::Queen)),
-            0b011 => Ok(Some(Piece::Rook)),
-            0b100 => Ok(Some(Piece::Bishop)),
-            0b101 => Ok(Some(Piece::Knight)),
-            0b110 => Ok(Some(Piece::Pawn)),
+            0b001 => Ok(Some(PieceKind::King)),
+            0b010 => Ok(Some(PieceKind::Queen)),
+            0b011 => Ok(Some(PieceKind::Rook)),
+            0b100 => Ok(Some(PieceKind::Bishop)),
+            0b101 => Ok(Some(PieceKind::Knight)),
+            0b110 => Ok(Some(PieceKind::Pawn)),
             0b000 => Ok(None),
             _ => Err(SError::InvalidBoard),
         }
@@ -433,9 +457,9 @@ impl Board {
 fn get_square_for_display(piece: &Option<Piece>, pretty: bool) -> String {
     let contents = if let Some(piece) = piece {
         if pretty {
-            piece.pretty()
+            piece.kind.pretty()
         } else {
-            piece.notation()
+            piece.kind.notation()
         }
     } else {
         ".".to_string()
@@ -557,7 +581,7 @@ mod tests {
         assert!(board.set(sq!("Nb2")).is_none());
         let existing = board.set(sq!("Pc4"));
         assert!(existing.is_some());
-        assert_eq!(Piece::Knight, existing.unwrap());
+        assert_eq!(PieceKind::Knight, existing.unwrap().kind);
         validate_board!(board, "..PP", "..B.", "QN..", "K..R");
     }
 

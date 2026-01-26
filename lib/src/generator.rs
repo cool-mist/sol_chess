@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
-use crate::board::{Board, cmove::CMove, piece::Piece};
+use crate::board::{
+    Board, BoardOptions,
+    cmove::CMove,
+    piece::{Piece, PieceKind},
+};
 
 pub trait RandomRange {
     fn gen_range(&self, min: usize, max: usize) -> usize;
@@ -24,23 +28,24 @@ pub struct GenerateStats {
 pub fn generate_weighted_random(
     num_pieces: u32,
     num_solutions: u32,
+    max_moves_per_piece: u32,
     rand: &impl RandomRange,
 ) -> GenerateStats {
     let candidate_pieces = vec![
-        Piece::Pawn,
-        Piece::Pawn,
-        Piece::Pawn,
-        Piece::Pawn,
-        Piece::Bishop,
-        Piece::Bishop,
-        Piece::Bishop,
-        Piece::Bishop,
-        Piece::Knight,
-        Piece::Knight,
-        Piece::Knight,
-        Piece::Queen,
-        Piece::Rook,
-        Piece::Rook,
+        PieceKind::Pawn,
+        PieceKind::Pawn,
+        PieceKind::Pawn,
+        PieceKind::Pawn,
+        PieceKind::Bishop,
+        PieceKind::Bishop,
+        PieceKind::Bishop,
+        PieceKind::Bishop,
+        PieceKind::Knight,
+        PieceKind::Knight,
+        PieceKind::Knight,
+        PieceKind::Queen,
+        PieceKind::Rook,
+        PieceKind::Rook,
     ];
 
     if num_pieces > candidate_pieces.len().try_into().unwrap() {
@@ -53,7 +58,13 @@ pub fn generate_weighted_random(
     let attempts: u32 = 1000;
     let mut overall_stats = GenerateStats::new(0, 0, 0, None, vec![]);
     for _ in 0..attempts {
-        let stats = try_generate(num_pieces, num_solutions, rand, candidate_pieces.clone());
+        let stats = try_generate(
+            num_pieces,
+            num_solutions,
+            max_moves_per_piece,
+            rand,
+            candidate_pieces.clone(),
+        );
         overall_stats.piece_total += stats.piece_total;
         overall_stats.piece_success += stats.piece_success;
         overall_stats.total += stats.total;
@@ -117,10 +128,14 @@ where
 fn try_generate(
     num_pieces: u32,
     num_solutions: u32,
+    max_moves_per_piece: u32,
     rand: &impl RandomRange,
-    mut candidate_pieces: Vec<Piece>,
+    mut candidate_pieces: Vec<PieceKind>,
 ) -> GenerateStats {
-    let mut board = Board::new();
+    let mut board = Board::create(BoardOptions {
+        max_moves_per_piece,
+    });
+
     let mut piece_total = 0;
     let mut piece_success = 0;
     for _ in 0..num_pieces {
@@ -136,10 +151,10 @@ fn try_generate(
             piece_total += 1;
 
             let index = rand.gen_range(0, candidate_pieces.len());
-            let piece = candidate_pieces[index];
+            let piece_kind = candidate_pieces[index];
             let square_index = rand.gen_range(0, empty_squares.len());
             let mut random_square = empty_squares[square_index].clone();
-            random_square.piece = Some(piece);
+            random_square.piece = Some(Piece::new(piece_kind));
             board.set(random_square.clone());
             let puzzle = board.solve();
             if puzzle.solutions.len() > 0 {
@@ -186,7 +201,7 @@ mod tests {
     #[test]
     fn generator_smoke() {
         for _ in 0..10 {
-            let gen_stats = generate_weighted_random(5, 5, &TestRandom);
+            let gen_stats = generate_weighted_random(5, 5, 10, &TestRandom);
             let board = gen_stats.board.expect("No puzzle was generated");
             assert_eq!(board.game_state, BoardState::InProgress);
 

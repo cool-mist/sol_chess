@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::{Game, GameMode, GameSettings, constants};
 use crate::{
     resources::{self, *},
@@ -15,26 +17,61 @@ impl Game {
         let game_mode = GameMode::Medium;
         let settings = GameSettings {
             volume: constants::VOLUME,
+            max_moves_per_piece: 3,
+            num_pieces: 2,
             ..Default::default()
         };
-        let puzzle = Game::generate_puzzle(game_mode);
+        let puzzle = Game::generate_puzzle(game_mode, &settings);
         let board = BoardWidget::initialize_state(puzzle.board.size, puzzle.board.clone());
-        let medium_btn = ButtonWidget::initialize_state(false);
+        let mut game_mode_btns = HashMap::new();
+        let game_mode = GameMode::Medium;
+        game_mode_btns.insert(GameMode::Easy, ButtonWidget::initialize_state(true));
+        game_mode_btns.insert(GameMode::Medium, ButtonWidget::initialize_state(true));
+        game_mode_btns.insert(GameMode::Hard, ButtonWidget::initialize_state(true));
+        game_mode_btns.insert(GameMode::Custom, ButtonWidget::initialize_state(true));
+        let reset_btn = ButtonWidget::initialize_state(true);
         let next_btn = ButtonWidget::initialize_state(false);
+        let rules_btn = ButtonWidget::initialize_state(true);
+        let generate_btn = ButtonWidget::initialize_state(false);
+        let id_text_btn = ButtonWidget::initialize_state(true);
+        let heading = LabelWidget::initialize_state(constants::HEADING_TEXT);
+        let pieces_label = LabelWidget::initialize_state(constants::PIECES_LABEL_TEXT);
+        let max_age_label = LabelWidget::initialize_state(constants::AGE_LABEL_TEXT);
+        let show_rules = false;
+        let pieces_counter = CounterWidget::initialize_state(2, 7, settings.num_pieces, false);
+        let moves_counter = CounterWidget::initialize_state(1, 7,  settings.max_moves_per_piece, false);
+        game_mode_btns.get_mut(&game_mode).unwrap().is_active = false;
+
         Self {
             puzzle,
             board,
             resources,
-            game_mode,
             settings,
-            heading_text: constants::HEADING_TEXT.to_string(),
-            rules_text: constants::RULES_BUTTON_TEXT.to_string(),
-            medium_btn,
+            game_mode,
+            game_mode_btns,
+            rules_btn_text: constants::RULES_BUTTON_TEXT.to_string(),
+            reset_btn,
             next_btn,
-            ..Self::default()
+            rules_btn,
+            id_text_btn,
+            show_rules,
+            heading_text: constants::HEADING_TEXT.to_string(),
+            heading,
+            pieces_counter,
+            max_age_counter: moves_counter,
+            generate_btn,
+            pieces_label,
+            max_age_label,
+            ..Default::default()
         }
     }
+
     pub fn handle_input(&mut self) {
+        let (mx, my) = mouse_position();
+        let winput = WidgetInput {
+            mouse_pos: Circle::new(mx, my, 0.0),
+        };
+
         // CORE GAMEPLAY
         let (mouse_x, mouse_y) = mouse_position();
         let mouse_pos = Circle::new(mouse_x, mouse_y, 0.0);
@@ -55,6 +92,11 @@ impl Game {
 
             return;
         }
+
+        self.id_text_btn.handle_input(
+            &self.resources.sound(&SoundKind::Click),
+            self.settings.volume,
+        );
 
         if self
             .reset_btn
@@ -81,50 +123,41 @@ impl Game {
         }
 
         // PRESETS
-        let mut clicked_game_mode_btn: Option<&ButtonWidget> = None;
-        if self
-            .easy_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Mode),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.game_mode = GameMode::Easy;
-            self.easy_btn.is_active = false;
-            self.medium_btn.is_active = true;
-            self.hard_btn.is_active = true;
-            clicked_game_mode_btn = Some(&self.easy_btn);
-        } else if self
-            .medium_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Mode),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.game_mode = GameMode::Medium;
-            self.easy_btn.is_active = true;
-            self.medium_btn.is_active = false;
-            self.hard_btn.is_active = true;
-            clicked_game_mode_btn = Some(&self.medium_btn);
-        } else if self
-            .hard_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Mode),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.game_mode = GameMode::Hard;
-            self.easy_btn.is_active = true;
-            self.medium_btn.is_active = true;
-            self.hard_btn.is_active = false;
-            clicked_game_mode_btn = Some(&self.hard_btn);
+        let mut game_mode_changed = false;
+        for (mode, btn) in &mut self.game_mode_btns {
+            if btn
+                .handle_input(
+                    &self.resources.sound(&SoundKind::Mode),
+                    self.settings.volume,
+                )
+                .is_clicked
+            {
+                self.game_mode = *mode;
+                game_mode_changed = true;
+                break;
+            }
         }
 
-        if let Some(_) = clicked_game_mode_btn {
-            self.next_puzzle();
+        if game_mode_changed {
+            for (mode, btn) in &mut self.game_mode_btns {
+                if *mode == self.game_mode {
+                    btn.is_active = false;
+                } else {
+                    btn.is_active = true;
+                }
+            }
+
+            if self.game_mode != GameMode::Custom {
+                self.generate_btn.is_active = false;
+                self.pieces_counter.set_active(false);
+                self.max_age_counter.set_active(false);
+                self.next_puzzle();
+            } else {
+                self.generate_btn.is_active = true;
+                self.pieces_counter.set_active(true);
+                self.max_age_counter.set_active(true);
+            }
+
             return;
         }
 
@@ -137,11 +170,41 @@ impl Game {
             .is_clicked
         {
             self.show_rules = !self.show_rules;
-            self.rules_text = match self.show_rules {
+            self.rules_btn_text = match self.show_rules {
                 true => constants::RULES_BUTTON_ALT_TEXT.to_string(),
                 false => constants::RULES_BUTTON_TEXT.to_string(),
             };
 
+            return;
+        }
+
+        let pieces_counter_interaction =
+            self.pieces_counter
+                .handle_input(&winput, &self.resources, &self.settings);
+        if pieces_counter_interaction.interacted {
+            self.settings.num_pieces = pieces_counter_interaction.current;
+            return;
+        }
+
+        let moves_counter_interaction =
+            self.max_age_counter
+                .handle_input(&winput, &self.resources, &self.settings);
+        if moves_counter_interaction.interacted {
+            self.settings.max_moves_per_piece = moves_counter_interaction.current;
+            return;
+        }
+
+        if self
+            .generate_btn
+            .handle_input(
+                &self.resources.sound(&SoundKind::Button),
+                self.settings.volume,
+            )
+            .is_clicked
+        {
+            if self.game_mode == GameMode::Custom {
+                self.next_puzzle();
+            }
             return;
         }
 
@@ -153,7 +216,7 @@ impl Game {
                     self.settings.volume,
                 );
                 self.show_rules = false;
-                self.rules_text = constants::RULES_BUTTON_TEXT.to_string();
+                self.rules_btn_text = constants::RULES_BUTTON_TEXT.to_string();
             }
 
             return;
@@ -175,7 +238,7 @@ impl Game {
 
     fn reset_game(&mut self, options: ResetOptions) {
         if options.create_new_puzzle {
-            self.puzzle = Game::generate_puzzle(self.game_mode);
+            self.puzzle = Game::generate_puzzle(self.game_mode, &self.settings);
         }
 
         self.next_btn.is_active = false;
@@ -189,15 +252,27 @@ impl Game {
         });
     }
 
-    fn generate_puzzle(mode: GameMode) -> Puzzle {
+    fn generate_puzzle(mode: GameMode, settings: &GameSettings) -> Puzzle {
         let piece_count = match mode {
             GameMode::Easy => 3,
             GameMode::Medium => 5,
             GameMode::Hard => 7,
+            GameMode::Custom => settings.num_pieces,
         };
 
-        let generated =
-            generator::generate_weighted_random(piece_count, 100, &MacroquadRandAdapter);
+        let max_moves_per_piece = match mode {
+            GameMode::Easy => 2,
+            GameMode::Medium => 2,
+            GameMode::Hard => 2,
+            GameMode::Custom => settings.max_moves_per_piece,
+        };
+
+        let generated = generator::generate_weighted_random(
+            piece_count,
+            100,
+            max_moves_per_piece,
+            &MacroquadRandAdapter,
+        );
         let puzzle = generated.puzzle();
         puzzle.expect("No puzzle was generated")
     }

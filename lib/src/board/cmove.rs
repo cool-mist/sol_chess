@@ -1,4 +1,6 @@
-use super::{piece::Piece, square::Square};
+use crate::board::piece::Piece;
+
+use super::{piece::PieceKind, square::Square};
 
 #[derive(PartialEq, Hash, Eq, Clone)]
 pub struct CMove {
@@ -26,8 +28,8 @@ impl CMove {
     }
 
     pub fn notation(&self) -> String {
-        let piece_qualifier = match &self.from_piece {
-            Piece::Pawn => self.from.file_notation(),
+        let piece_qualifier = match &self.from_piece.kind {
+            PieceKind::Pawn => self.from.file_notation(),
             p => p.notation(),
         };
         format!(

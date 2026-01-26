@@ -6,7 +6,7 @@ pub const SCREEN_WIDTH_MIN: f32 = 200.0;
 pub const SCREEN_WIDTH_MAX: f32 = 10000.0;
 
 // How big the square should be relative to the screen size, between 0 and 1
-pub const BOARD_SQUARE_WIDTH_MULTIPLIER: f32 = 0.15;
+pub const BOARD_SQUARE_WIDTH_MULTIPLIER: f32 = 0.11;
 
 pub const BOARD_SHADOW_MULTIPLIER: f32 = 0.1;
 
@@ -22,19 +22,24 @@ pub const BUTTON_HEIGHT_MULTIPLIER: f32 = 0.08;
 pub const BUTTON_WIDTH_MULTIPLIER: f32 = 0.20;
 
 // Gap between the bottom of the board and the first row of buttons
-pub const BOTTOM_BUTTON_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
+pub const BOTTOM_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
 
 // Gap between the right of the board and the first row of buttons
-pub const BOTTOM_RIGHT_ROW_OFFSET_MULTIPLIER: f32 = 0.3;
+pub const RIGHT_COLUMN_OFFSET_MULTIPLIER: f32 = 0.3;
 
 // Gap between the top of the board and the heading
 pub const TOP_HEADING_OFFSET_MULTIPLIER: f32 = 0.5;
 
 pub const HEADING_TEXT: &str = "Solitaire Chess";
-pub const RESET_BUTTON_TEXT: &str = "R";
-pub const NEXT_BUTTON_TEXT: &str = "N";
+pub const RESET_BUTTON_TEXT: &str = "RESET";
+pub const NEXT_BUTTON_TEXT: &str = "NEXT";
 pub const RULES_BUTTON_TEXT: &str = "RULES";
 pub const RULES_BUTTON_ALT_TEXT: &str = "CLOSE";
 pub const EASY_BUTTON_TEXT: &str = "EASY";
 pub const MEDIUM_BUTTON_TEXT: &str = "MEDIUM";
 pub const HARD_BUTTON_TEXT: &str = "HARD";
+pub const CUSTOM_BUTTON_TEXT: &str = "CUSTOM";
+pub const GENERATE_BUTTON_TEXT: &str = "GENERATE";
+pub const PIECES_LABEL_TEXT: &str = "Pieces";
+pub const AGE_LABEL_TEXT: &str = "   Age";
+

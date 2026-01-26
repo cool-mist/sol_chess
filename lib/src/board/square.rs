@@ -1,5 +1,7 @@
+use crate::board::piece::Piece;
+
 use super::constants::BOARD_SIZE;
-use super::piece::Piece;
+use super::piece::PieceKind;
 use core::fmt;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -29,8 +31,8 @@ impl Square {
 
     pub fn parse(notation: &str) -> Self {
         let mut chars = notation.chars();
-        let piece = chars.next().expect("Piece missing");
-        let piece = Piece::parse(&piece.to_string());
+        let piece_kind = chars.next().expect("Piece missing");
+        let piece_kind = PieceKind::parse(&piece_kind.to_string());
         let file = chars.next().expect("File missing");
         let file = match file {
             'a' => 0,
@@ -45,6 +47,7 @@ impl Square {
             panic!("rank should be between 1-{}", BOARD_SIZE);
         }
         let rank = BOARD_SIZE - rank;
+        let piece = piece_kind.map(|kind| Piece::new(kind));
         Square::new(file, rank, piece)
     }
 
@@ -73,7 +76,7 @@ impl Square {
         if self.piece.is_none() {
             "".to_string()
         } else {
-            self.piece.unwrap().notation()
+            self.piece.unwrap().kind.notation()
         }
     }
 }
@@ -131,7 +134,7 @@ mod tests {
             let square = Square::parse(&notation);
             assert_eq!(square.file, $file);
             assert_eq!(square.rank, $rank);
-            assert_eq!(square.piece, Some(Piece::King));
+            assert_eq!(square.piece.unwrap().kind, PieceKind::King);
             assert_eq!(square.notation(), notation);
         };
     }
