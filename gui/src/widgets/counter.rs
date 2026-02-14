@@ -112,13 +112,26 @@ impl CounterWidget {
         self.increment.draw("+", &UiColor::Yellow, resources);
         self.decrement.draw("-", &UiColor::Yellow, resources);
 
+        let font = resources.font();
+        let mut min_dim = self.visual_rect.w.min(self.visual_rect.h);
+        let mut font_size = self.font_size as u16;
+        loop {
+            if min_dim <= self.visual_rect.w * 0.5 {
+                break;
+            }
+
+            let dims = measure_text(&self.current.to_string(), Some(&font), font_size as u16, 1.0);
+            min_dim = dims.width.min(dims.height);
+            font_size -= 1;
+        }
+
         draw_text_ex(
             &self.current.to_string(),
             self.visual_rect.x + (self.visual_rect.w - self.visual_dims.width) / 2.,
             self.visual_rect.y + (self.visual_rect.h + self.font_size) / 2.,
             TextParams {
                 font: Some(resources.font()),
-                font_size: self.font_size as u16,
+                font_size,
                 color: UiColor::Yellow.to_fg_color(),
                 ..Default::default()
             },
