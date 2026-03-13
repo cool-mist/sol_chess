@@ -28,10 +28,13 @@ fn window_conf() -> Conf {
 async fn main() {
     rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
-    let mut game = Game::initialize_state().await;
+    let mut game = Game::new().await;
     loop {
         clear_background(background_color);
-        game.handle_input();
+
+        let interaction = game.handle_user_input();
+        game.handle_interaction(interaction);
+
         game.draw();
         next_frame().await
     }

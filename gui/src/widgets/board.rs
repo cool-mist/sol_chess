@@ -2,7 +2,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    game::{GameSettings, constants},
+    game::{GameMode, GameSettings, constants},
     resources::{Resources, SoundKind},
     widgets::*,
 };
@@ -22,9 +22,32 @@ pub struct BoardWidget {
     state: GameState,
 }
 
-pub struct BoardInteraction<'a> {
-    pub interacted: bool,
-    pub board_state: Option<&'a BoardState>,
+#[derive(Copy, Clone)]
+pub enum ButtonName {
+    Reset,
+    Next,
+    Rules,
+    Generate,
+}
+
+pub enum CounterName {
+    Pieces,
+    Age,
+}
+
+pub enum GameInteraction {
+    NoInteraction,
+    Board(BoardState),
+    ButtonRelease(ButtonName),
+    GameMode(GameMode),
+    Counter(CounterName, u32),
+    ToggleDebug,
+    HideRules,
+    Quit,
+}
+
+pub struct BoardInteraction {
+    pub new_board_state: Option<BoardState>,
 }
 
 impl BoardWidget {
@@ -189,16 +212,16 @@ impl BoardWidget {
         }
     }
 
-    pub fn handle_input<'a>(
-        &'a mut self,
-        mouse_pos: Circle,
+    pub fn handle_input(
+        &mut self,
+        interaction: &UserInteraction,
         resources: &Resources,
         settings: &GameSettings,
-    ) -> BoardInteraction<'a> {
+    ) -> BoardInteraction {
+        let mouse_pos = interaction.mouse_pos;
         if mouse_pos.overlaps_rect(&self.board_rect) == false {
             return BoardInteraction {
-                interacted: false,
-                board_state: None,
+                new_board_state: None,
             };
         }
 
@@ -239,8 +262,7 @@ impl BoardWidget {
 
         let board_state = &self.current_board.game_state;
         return BoardInteraction {
-            interacted: true,
-            board_state: Some(board_state),
+            new_board_state: Some(*board_state),
         };
     }
 

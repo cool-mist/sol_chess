@@ -3,31 +3,31 @@ use macroquad::{audio::Sound, prelude::*};
 
 pub struct ButtonWidget {
     pub is_active: bool,
+    pub text: String,
+    pub color: UiColor,
     is_down: bool,
     rect: Rect,
     shadow_width: f32,
 }
 
-pub struct ButtonInteraction {
-    pub is_clicked: bool,
-}
-
 impl ButtonWidget {
-    pub fn initialize_state(is_active: bool) -> Self {
+    pub fn new(is_active: bool, color: UiColor, text: impl Into<String>) -> Self {
         Self {
             is_active,
+            text: text.into(),
+            color,
+            shadow_width: 5.0,
             ..Default::default()
         }
     }
 
-    pub fn initialize_drawables(&mut self, rect: Rect) {
+    pub fn place(&mut self, rect: Rect) {
         self.rect = rect;
-        self.shadow_width = 5.0;
     }
 
-    pub fn draw(&self, text: &str, color: &UiColor, resources: &Resources) {
-        self.draw_button(color);
-        self.draw_label(text, resources, color);
+    pub fn draw(&self, resources: &Resources) {
+        self.draw_button(&self.color);
+        self.draw_label(&self.text, resources, &self.color);
     }
 
     fn draw_button(&self, color: &UiColor) {
@@ -105,10 +105,10 @@ impl ButtonWidget {
         button_pressed_correction
     }
 
-    pub fn handle_input(&mut self, click_sound: &Sound, volume: f32) -> ButtonInteraction {
+    pub fn handle_input(&mut self, click_sound: &Sound, volume: f32) -> bool {
         if !self.is_active {
             self.is_down = false;
-            return ButtonInteraction { is_clicked: false };
+            return false;
         }
 
         let (mx, my) = mouse_position();
@@ -117,7 +117,7 @@ impl ButtonWidget {
         if is_mouse_button_pressed(MouseButton::Left) {
             if c.overlaps_rect(&self.rect) {
                 self.is_down = true;
-                return ButtonInteraction { is_clicked: false };
+                return false;
             }
         }
 
@@ -125,13 +125,13 @@ impl ButtonWidget {
             if c.overlaps_rect(&self.rect) {
                 play_sound_once(&click_sound, volume);
                 self.is_down = false;
-                return ButtonInteraction { is_clicked: true };
+                return true;
             }
 
             self.is_down = false;
         }
 
-        return ButtonInteraction { is_clicked: false };
+        false
     }
 }
 
@@ -142,6 +142,8 @@ impl Default for ButtonWidget {
             is_down: Default::default(),
             rect: Default::default(),
             shadow_width: Default::default(),
+            color: UiColor::Grey,
+            text: String::new(),
         }
     }
 }

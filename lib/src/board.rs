@@ -30,7 +30,7 @@ pub struct Board {
     max_moves_per_piece: u32,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum BoardState {
     NotStarted,
     InProgress,

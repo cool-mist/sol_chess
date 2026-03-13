@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::{Game, GameMode, GameSettings, constants};
 use crate::{
+    game::{self, Widget, WidgetId, w_button, w_counter},
     resources::{self, *},
     widgets::*,
 };
@@ -12,7 +13,7 @@ use sol_lib::{
 };
 
 impl Game {
-    pub async fn initialize_state() -> Self {
+    pub async fn new() -> Self {
         let resources = resources::init().await;
         let game_mode = GameMode::Medium;
         let settings = GameSettings {
@@ -25,22 +26,82 @@ impl Game {
         let board = BoardWidget::initialize_state(puzzle.board.size, puzzle.board.clone());
         let mut game_mode_btns = HashMap::new();
         let game_mode = GameMode::Medium;
-        game_mode_btns.insert(GameMode::Easy, ButtonWidget::initialize_state(true));
-        game_mode_btns.insert(GameMode::Medium, ButtonWidget::initialize_state(true));
-        game_mode_btns.insert(GameMode::Hard, ButtonWidget::initialize_state(true));
-        game_mode_btns.insert(GameMode::Custom, ButtonWidget::initialize_state(true));
-        let reset_btn = ButtonWidget::initialize_state(true);
-        let next_btn = ButtonWidget::initialize_state(false);
-        let rules_btn = ButtonWidget::initialize_state(true);
-        let generate_btn = ButtonWidget::initialize_state(false);
-        let id_text_btn = ButtonWidget::initialize_state(true);
+        game_mode_btns.insert(
+            GameMode::Easy,
+            ButtonWidget::new(true, UiColor::Yellow, constants::EASY_BUTTON_TEXT),
+        );
+        game_mode_btns.insert(
+            GameMode::Medium,
+            ButtonWidget::new(true, UiColor::Yellow, constants::MEDIUM_BUTTON_TEXT),
+        );
+        game_mode_btns.insert(
+            GameMode::Hard,
+            ButtonWidget::new(true, UiColor::Yellow, constants::HARD_BUTTON_TEXT),
+        );
+        game_mode_btns.insert(
+            GameMode::Custom,
+            ButtonWidget::new(true, UiColor::Blue, constants::CUSTOM_BUTTON_TEXT),
+        );
+        let generate_btn = ButtonWidget::new(false, UiColor::Pink, constants::GENERATE_BUTTON_TEXT);
         let heading = LabelWidget::initialize_state(constants::HEADING_TEXT);
         let pieces_label = LabelWidget::initialize_state(constants::PIECES_LABEL_TEXT);
         let max_age_label = LabelWidget::initialize_state(constants::AGE_LABEL_TEXT);
         let show_rules = false;
-        let pieces_counter = CounterWidget::initialize_state(2, 7, settings.num_pieces, false);
-        let moves_counter = CounterWidget::initialize_state(1, 7,  settings.max_moves_per_piece, false);
         game_mode_btns.get_mut(&game_mode).unwrap().is_active = false;
+
+        let mut widgets = HashMap::new();
+        let label_pieces = add_widget(&mut widgets, Widget::Label(pieces_label));
+        let label_max_age = add_widget(&mut widgets, Widget::Label(max_age_label));
+        let label_heading = add_widget(&mut widgets, Widget::Label(heading));
+
+        let counter_pieces = add_widget(
+            &mut widgets,
+            Widget::Counter(CounterWidget::new(
+                2,
+                7,
+                settings.num_pieces,
+                false,
+                UiColor::Yellow,
+            )),
+        );
+
+        let counter_moves = add_widget(
+            &mut widgets,
+            Widget::Counter(CounterWidget::new(
+                1,
+                7,
+                settings.max_moves_per_piece,
+                false,
+                UiColor::Yellow,
+            )),
+        );
+
+        let btn_reset = add_widget(
+            &mut widgets,
+            Widget::Button(ButtonWidget::new(
+                true,
+                UiColor::Yellow,
+                constants::RESET_BUTTON_TEXT,
+            )),
+        );
+
+        let btn_next = add_widget(
+            &mut widgets,
+            Widget::Button(ButtonWidget::new(
+                false,
+                UiColor::Green,
+                constants::NEXT_BUTTON_TEXT,
+            )),
+        );
+
+        let btn_rules = add_widget(
+            &mut widgets,
+            Widget::Button(ButtonWidget::new(
+                true,
+                UiColor::Brown,
+                constants::RULES_BUTTON_TEXT,
+            )),
+        );
 
         Self {
             puzzle,
@@ -49,187 +110,169 @@ impl Game {
             settings,
             game_mode,
             game_mode_btns,
-            rules_btn_text: constants::RULES_BUTTON_TEXT.to_string(),
-            reset_btn,
-            next_btn,
-            rules_btn,
-            id_text_btn,
+            btn_reset,
+            btn_next,
+            btn_rules,
             show_rules,
-            heading_text: constants::HEADING_TEXT.to_string(),
-            heading,
-            pieces_counter,
-            max_age_counter: moves_counter,
+            widgets,
+            counter_pieces,
+            counter_moves,
             generate_btn,
-            pieces_label,
-            max_age_label,
+            label_pieces,
+            label_max_age,
+            label_heading,
             ..Default::default()
         }
     }
 
-    pub fn handle_input(&mut self) {
+    pub fn handle_interaction(&mut self, interaction: GameInteraction) {
+        match interaction {
+            GameInteraction::NoInteraction => {}
+            GameInteraction::Board(new_board_state) => match new_board_state {
+                BoardState::Won => {
+                    w_button!(self, btn_next).is_active = true;
+                }
+                _ => {}
+            },
+            GameInteraction::ButtonRelease(button_name) => match button_name {
+                ButtonName::Reset => self.reset(),
+                ButtonName::Next => self.next_puzzle(),
+                ButtonName::Rules => {
+                    self.show_rules = !self.show_rules;
+                    w_button!(self, btn_rules).text = match self.show_rules {
+                        true => constants::RULES_BUTTON_ALT_TEXT.to_string(),
+                        false => constants::RULES_BUTTON_TEXT.to_string(),
+                    };
+                }
+                ButtonName::Generate => {
+                    if self.game_mode == GameMode::Custom {
+                        self.next_puzzle();
+                    }
+                }
+            },
+            GameInteraction::GameMode(mode) => {
+                self.game_mode = mode;
+                for (mode, btn) in &mut self.game_mode_btns {
+                    if *mode == self.game_mode {
+                        btn.is_active = false;
+                    } else {
+                        btn.is_active = true;
+                    }
+                }
+
+                let is_custom_game_mode = self.game_mode == GameMode::Custom;
+                self.generate_btn.is_active = is_custom_game_mode;
+                w_counter!(self, counter_pieces).set_active(is_custom_game_mode);
+                w_counter!(self, counter_moves).set_active(is_custom_game_mode);
+
+                // A change in game mode, immediately generate new puzzle
+                if !is_custom_game_mode {
+                    self.next_puzzle();
+                }
+            }
+            GameInteraction::Counter(counter_name, new_value) => match counter_name {
+                CounterName::Pieces => {
+                    self.settings.num_pieces = new_value;
+                }
+                CounterName::Age => {
+                    self.settings.max_moves_per_piece = new_value;
+                }
+            },
+            GameInteraction::ToggleDebug => self.settings.debug = !self.settings.debug,
+            GameInteraction::HideRules => {
+                if self.show_rules {
+                    play_sound_once(
+                        &self.resources.sound(&SoundKind::Button),
+                        self.settings.volume,
+                    );
+                    self.show_rules = false;
+                    w_button!(self, btn_rules).text = constants::RULES_BUTTON_TEXT.to_string();
+                }
+            }
+            GameInteraction::Quit => std::process::exit(0),
+        }
+    }
+
+    pub fn handle_user_input(&mut self) -> GameInteraction {
         let (mx, my) = mouse_position();
-        let winput = WidgetInput {
+        let winput = UserInteraction {
             mouse_pos: Circle::new(mx, my, 0.0),
         };
 
-        // CORE GAMEPLAY
-        let (mouse_x, mouse_y) = mouse_position();
-        let mouse_pos = Circle::new(mouse_x, mouse_y, 0.0);
+        // WIDGETS
         let board_interaction = self
             .board
-            .handle_input(mouse_pos, &self.resources, &self.settings);
-        if board_interaction.interacted {
-            let Some(board_state) = board_interaction.board_state else {
-                return;
-            };
-
-            match board_state {
-                BoardState::Won => {
-                    self.next_btn.is_active = true;
-                }
-                _ => {}
-            }
-
-            return;
+            .handle_input(&winput, &self.resources, &self.settings);
+        if let Some(new_board_state) = board_interaction.new_board_state {
+            return GameInteraction::Board(new_board_state);
         }
 
-        self.id_text_btn.handle_input(
-            &self.resources.sound(&SoundKind::Click),
+        if w_button!(self, btn_reset).handle_input(
+            &self.resources.sound(&SoundKind::Button),
             self.settings.volume,
-        );
-
-        if self
-            .reset_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Button),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.reset();
-            return;
+        ) {
+            return GameInteraction::ButtonRelease(ButtonName::Reset);
         }
 
-        if self
-            .next_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Button),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.next_puzzle();
-            return;
+        if w_button!(self, btn_next).handle_input(
+            &self.resources.sound(&SoundKind::Button),
+            self.settings.volume,
+        ) {
+            return GameInteraction::ButtonRelease(ButtonName::Next);
         }
 
-        // PRESETS
-        let mut game_mode_changed = false;
         for (mode, btn) in &mut self.game_mode_btns {
-            if btn
-                .handle_input(
-                    &self.resources.sound(&SoundKind::Mode),
-                    self.settings.volume,
-                )
-                .is_clicked
-            {
-                self.game_mode = *mode;
-                game_mode_changed = true;
-                break;
-            }
-        }
-
-        if game_mode_changed {
-            for (mode, btn) in &mut self.game_mode_btns {
-                if *mode == self.game_mode {
-                    btn.is_active = false;
-                } else {
-                    btn.is_active = true;
-                }
-            }
-
-            if self.game_mode != GameMode::Custom {
-                self.generate_btn.is_active = false;
-                self.pieces_counter.set_active(false);
-                self.max_age_counter.set_active(false);
-                self.next_puzzle();
-            } else {
-                self.generate_btn.is_active = true;
-                self.pieces_counter.set_active(true);
-                self.max_age_counter.set_active(true);
-            }
-
-            return;
-        }
-
-        if self
-            .rules_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Button),
+            if btn.handle_input(
+                &self.resources.sound(&SoundKind::Mode),
                 self.settings.volume,
-            )
-            .is_clicked
-        {
-            self.show_rules = !self.show_rules;
-            self.rules_btn_text = match self.show_rules {
-                true => constants::RULES_BUTTON_ALT_TEXT.to_string(),
-                false => constants::RULES_BUTTON_TEXT.to_string(),
-            };
+            ) {
+                return GameInteraction::GameMode(*mode);
+            }
+        }
 
-            return;
+        if w_button!(self, btn_rules).handle_input(
+            &self.resources.sound(&SoundKind::Button),
+            self.settings.volume,
+        ) {
+            return GameInteraction::ButtonRelease(ButtonName::Rules);
         }
 
         let pieces_counter_interaction =
-            self.pieces_counter
-                .handle_input(&winput, &self.resources, &self.settings);
+            w_counter!(self, counter_pieces).handle_input(&winput, &self.resources, &self.settings);
         if pieces_counter_interaction.interacted {
-            self.settings.num_pieces = pieces_counter_interaction.current;
-            return;
+            return GameInteraction::Counter(
+                CounterName::Pieces,
+                pieces_counter_interaction.current,
+            );
         }
 
-        let moves_counter_interaction =
-            self.max_age_counter
-                .handle_input(&winput, &self.resources, &self.settings);
-        if moves_counter_interaction.interacted {
-            self.settings.max_moves_per_piece = moves_counter_interaction.current;
-            return;
+        let age_counter_interaction =
+            w_counter!(self, counter_moves).handle_input(&winput, &self.resources, &self.settings);
+        if age_counter_interaction.interacted {
+            return GameInteraction::Counter(CounterName::Age, age_counter_interaction.current);
         }
 
-        if self
-            .generate_btn
-            .handle_input(
-                &self.resources.sound(&SoundKind::Button),
-                self.settings.volume,
-            )
-            .is_clicked
-        {
-            if self.game_mode == GameMode::Custom {
-                self.next_puzzle();
-            }
-            return;
+        if self.generate_btn.handle_input(
+            &self.resources.sound(&SoundKind::Button),
+            self.settings.volume,
+        ) {
+            return GameInteraction::ButtonRelease(ButtonName::Generate);
         }
 
         // KEY INPUTS
         if is_key_released(KeyCode::Escape) {
-            if self.show_rules {
-                play_sound_once(
-                    &self.resources.sound(&SoundKind::Button),
-                    self.settings.volume,
-                );
-                self.show_rules = false;
-                self.rules_btn_text = constants::RULES_BUTTON_TEXT.to_string();
-            }
-
-            return;
+            return GameInteraction::HideRules;
         }
 
         if is_key_released(KeyCode::D) {
-            self.settings.debug = !self.settings.debug;
-            return;
+            return GameInteraction::ToggleDebug;
         }
 
         if is_key_released(KeyCode::Q) {
-            std::process::exit(0);
+            return GameInteraction::Quit;
         }
+
+        return GameInteraction::NoInteraction;
     }
 
     fn reset(&mut self) {
@@ -241,7 +284,7 @@ impl Game {
             self.puzzle = Game::generate_puzzle(self.game_mode, &self.settings);
         }
 
-        self.next_btn.is_active = false;
+        w_button!(self, btn_next).is_active = false;
         self.board.reset(&self.puzzle);
     }
 
@@ -276,6 +319,14 @@ impl Game {
         let puzzle = generated.puzzle();
         puzzle.expect("No puzzle was generated")
     }
+}
+
+fn add_widget(widgets: &mut HashMap<WidgetId, Widget>, w: Widget) -> WidgetId {
+    let id = rand::rand() as u64;
+    let widget_id = WidgetId(id);
+    widgets.insert(widget_id, w);
+
+    widget_id
 }
 
 #[derive(Default)]

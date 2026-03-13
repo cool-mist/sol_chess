@@ -65,7 +65,7 @@ impl IdTextInput {
         );
     }
 
-    pub fn handle_input(&self, _: &WidgetInput) -> IdTextInputInteraction {
+    pub fn handle_input(&self, _: &UserInteraction) -> IdTextInputInteraction {
         IdTextInputInteraction {}
     }
 }

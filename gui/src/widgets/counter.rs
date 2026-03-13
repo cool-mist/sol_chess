@@ -26,12 +26,22 @@ pub struct CounterWidgetInteraction {
 }
 
 impl CounterWidget {
-    pub fn initialize_state(min: u32, max: u32, current: u32, is_active: bool) -> Self {
+    pub fn new(
+        min: u32,
+        max: u32,
+        current: u32,
+        is_active: bool,
+        color: UiColor,
+    ) -> Self {
+        let increment = ButtonWidget::new(is_active, color, "+");
+        let decrement = ButtonWidget::new(is_active, color, "-");
         Self {
             min,
             max,
             current,
             is_active,
+            increment,
+            decrement,
             ..Default::default()
         }
     }
@@ -59,12 +69,10 @@ impl CounterWidget {
         self.visual_rect = Rect::new(btn_x, visual_y, btn_w, btn_h);
 
         let increment_rect = Rect::new(btn_x, increment_y, btn_w, btn_h);
-        self.increment = ButtonWidget::initialize_state(self.is_active);
-        self.increment.initialize_drawables(increment_rect);
+        self.increment.place(increment_rect);
 
         let decrement_rect = Rect::new(btn_x, decrement_y, btn_w, btn_h);
-        self.decrement = ButtonWidget::initialize_state(self.is_active);
-        self.decrement.initialize_drawables(decrement_rect);
+        self.decrement.place(decrement_rect);
 
         self.increment_dims = measure_text("+", Some(resources.font()), font_size as u16, 1.0);
         self.decrement_dims = measure_text("-", Some(resources.font()), font_size as u16, 1.0);
@@ -75,7 +83,7 @@ impl CounterWidget {
 
     pub fn handle_input(
         &mut self,
-        _: &WidgetInput,
+        _: &UserInteraction,
         resources: &Resources,
         settings: &GameSettings,
     ) -> CounterWidgetInteraction {
@@ -83,7 +91,6 @@ impl CounterWidget {
         if self
             .increment
             .handle_input(resources.sound(&SoundKind::Click), settings.volume)
-            .is_clicked
         {
             if self.current < self.max {
                 self.current += 1;
@@ -94,7 +101,6 @@ impl CounterWidget {
         if self
             .decrement
             .handle_input(resources.sound(&SoundKind::Click), settings.volume)
-            .is_clicked
         {
             if self.current > self.min {
                 self.current -= 1;
@@ -109,8 +115,8 @@ impl CounterWidget {
     }
 
     pub fn draw(&mut self, resources: &Resources) {
-        self.increment.draw("+", &UiColor::Yellow, resources);
-        self.decrement.draw("-", &UiColor::Yellow, resources);
+        self.increment.draw(resources);
+        self.decrement.draw(resources);
 
         let font = resources.font();
         let mut min_dim = self.visual_rect.w.min(self.visual_rect.h);
@@ -120,7 +126,12 @@ impl CounterWidget {
                 break;
             }
 
-            let dims = measure_text(&self.current.to_string(), Some(&font), font_size as u16, 1.0);
+            let dims = measure_text(
+                &self.current.to_string(),
+                Some(&font),
+                font_size as u16,
+                1.0,
+            );
             min_dim = dims.width.min(dims.height);
             font_size -= 1;
         }

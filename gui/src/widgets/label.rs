@@ -7,7 +7,7 @@ pub struct LabelWidget {
     rect: Rect,
     font_size: f32,
     text_dimensions: TextDimensions,
-    text: String,
+    pub text: String,
 }
 
 impl LabelWidget {

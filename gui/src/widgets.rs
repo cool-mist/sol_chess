@@ -18,7 +18,7 @@ use macroquad::{
 };
 use quad_snd::PlaySoundParams;
 
-pub struct WidgetInput {
+pub struct UserInteraction {
     pub mouse_pos: Circle,
 }
 
