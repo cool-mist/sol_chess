@@ -68,10 +68,19 @@ pub async fn init() -> Resources {
 fn generate_texture_rects_pieces(active: bool) -> HashMap<PieceKind, Rect> {
     let mut texture_rects_pieces = HashMap::new();
     texture_rects_pieces.insert(PieceKind::Pawn, piece_texture_rect(PieceKind::Pawn, active));
-    texture_rects_pieces.insert(PieceKind::Knight, piece_texture_rect(PieceKind::Knight, active));
-    texture_rects_pieces.insert(PieceKind::Bishop, piece_texture_rect(PieceKind::Bishop, active));
+    texture_rects_pieces.insert(
+        PieceKind::Knight,
+        piece_texture_rect(PieceKind::Knight, active),
+    );
+    texture_rects_pieces.insert(
+        PieceKind::Bishop,
+        piece_texture_rect(PieceKind::Bishop, active),
+    );
     texture_rects_pieces.insert(PieceKind::Rook, piece_texture_rect(PieceKind::Rook, active));
-    texture_rects_pieces.insert(PieceKind::Queen, piece_texture_rect(PieceKind::Queen, active));
+    texture_rects_pieces.insert(
+        PieceKind::Queen,
+        piece_texture_rect(PieceKind::Queen, active),
+    );
     texture_rects_pieces.insert(PieceKind::King, piece_texture_rect(PieceKind::King, active));
 
     texture_rects_pieces
@@ -93,7 +102,7 @@ fn piece_texture_rect(piece: PieceKind, active: bool) -> Rect {
     Rect::new(index as f32 * 128.0, color as f32 * 128.0, 128.0, 128.0)
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, Copy, Clone, PartialEq, Hash)]
 pub enum SoundKind {
     Click,
     Win,

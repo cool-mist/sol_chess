@@ -1,5 +1,8 @@
-use crate::{resources::Resources, widgets::*};
-use macroquad::{audio::Sound, prelude::*};
+use crate::{
+    game::{Command, Settings},
+    resources::{Resources, SoundKind},
+    widgets::*,
+};
 
 pub struct ButtonWidget {
     pub is_active: bool,
@@ -8,15 +11,32 @@ pub struct ButtonWidget {
     is_down: bool,
     rect: Rect,
     shadow_width: f32,
+    sound: SoundKind,
+    pub on_click: fn(&mut ButtonWidget) -> Command,
+}
+
+pub struct ButtonInteraction {
+    pub clicked: bool,
+}
+
+impl ButtonInteraction {
+    fn not_clicked() -> Self {
+        Self { clicked: false }
+    }
+
+    fn clicked() -> Self {
+        Self { clicked: true }
+    }
 }
 
 impl ButtonWidget {
-    pub fn new(is_active: bool, color: UiColor, text: impl Into<String>) -> Self {
+    pub fn new(is_active: bool, color: UiColor, text: impl Into<String>, sound: SoundKind) -> Self {
         Self {
             is_active,
             text: text.into(),
             color,
             shadow_width: 5.0,
+            sound,
             ..Default::default()
         }
     }
@@ -105,33 +125,38 @@ impl ButtonWidget {
         button_pressed_correction
     }
 
-    pub fn handle_input(&mut self, click_sound: &Sound, volume: f32) -> bool {
+    pub fn handle_input(
+        &mut self,
+        interaction: &Interaction,
+        resources: &Resources,
+        settings: &Settings,
+    ) -> ButtonInteraction {
         if !self.is_active {
             self.is_down = false;
-            return false;
+            return ButtonInteraction::not_clicked();
         }
 
-        let (mx, my) = mouse_position();
-        let c = Circle::new(mx, my, 0.0);
-
-        if is_mouse_button_pressed(MouseButton::Left) {
-            if c.overlaps_rect(&self.rect) {
+        let mouse = interaction.mouse_pos;
+        if interaction.mouse_pressed.contains(&MouseButton::Left) {
+            if mouse.overlaps_rect(&self.rect) {
                 self.is_down = true;
-                return false;
+                return ButtonInteraction::not_clicked();
             }
         }
 
-        if is_mouse_button_released(MouseButton::Left) {
-            if c.overlaps_rect(&self.rect) {
+        if interaction.mouse_released.contains(&MouseButton::Left) {
+            if mouse.overlaps_rect(&self.rect) {
+                let click_sound = resources.sound(&self.sound);
+                let volume = settings.volume;
                 play_sound_once(&click_sound, volume);
                 self.is_down = false;
-                return true;
+                return ButtonInteraction::clicked();
             }
 
             self.is_down = false;
         }
 
-        false
+        ButtonInteraction::not_clicked()
     }
 }
 
@@ -144,6 +169,8 @@ impl Default for ButtonWidget {
             shadow_width: Default::default(),
             color: UiColor::Grey,
             text: String::new(),
+            sound: SoundKind::Click,
+            on_click: |_| Command::NoInteraction,
         }
     }
 }

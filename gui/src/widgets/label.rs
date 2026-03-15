@@ -21,7 +21,8 @@ impl LabelWidget {
     pub fn initialize_drawables(&mut self, rect: Rect, font_size: f32, resources: &Resources) {
         self.rect = rect;
         self.font_size = font_size;
-        self.text_dimensions = measure_text(&self.text, Some(resources.font()), font_size as u16, 1.0);
+        self.text_dimensions =
+            measure_text(&self.text, Some(resources.font()), font_size as u16, 1.0);
     }
 
     pub fn draw(&self, resources: &Resources) {

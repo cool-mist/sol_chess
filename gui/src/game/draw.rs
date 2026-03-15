@@ -1,6 +1,6 @@
 use super::{Game, constants};
 use crate::{
-    game::{self, GameMode, w_button, w_counter, w_label},
+    game::{self, GameMode, w_board, w_button, w_counter, w_label},
     widgets::*,
 };
 use macroquad::{math, prelude::*};
@@ -12,12 +12,10 @@ impl Game {
 
         let min_dimension = f32::min(self.window_height, self.window_width);
         let square_width = constants::BOARD_SQUARE_WIDTH_MULTIPLIER * min_dimension;
-        let num_squares = self.board.num_squares;
+        let num_squares = w_board!(self, board).num_squares;
         let board_width = square_width * num_squares as f32;
         let board_x = (self.window_width * 0.6 - board_width) / 2.0;
         let board_y = (self.window_height - board_width) / 2.0;
-        let board_rect = Rect::new(board_x, board_y, board_width, board_width);
-        self.board.initialize_drawables(square_width, board_rect);
 
         let heading_font_size = constants::HEADING_FONT_SIZE_MULTIPLIER * min_dimension;
         let f = heading_font_size.floor() as u16;
@@ -39,6 +37,13 @@ impl Game {
             heading_rect,
             heading_font_size,
             &self.resources,
+        );
+
+        let board_rect = Rect::new(board_x, board_y, board_width, board_width);
+        w_board!(self, board).initialize_drawables(
+            square_width,
+            board_rect,
+            heading_font_size * 0.4,
         );
 
         // Buttons
@@ -63,14 +68,12 @@ impl Game {
         ));
 
         let btn_next_x_offset = (board_width - square_width) + (square_width - btn_w) / 2.;
-        w_button!(self, btn_reset).place(Rect::new(
+        w_button!(self, btn_next).place(Rect::new(
             board_x + btn_next_x_offset,
             bottom_row_y,
             btn_w,
             btn_h,
         ));
-
-        self.rules_font_size = heading_font_size;
 
         // Right column
         let right_column_x =
@@ -108,7 +111,7 @@ impl Game {
         // Right column 2
         let right_column_2_x =
             right_column_x + btn_w + constants::RIGHT_COLUMN_OFFSET_MULTIPLIER * square_width;
-        self.generate_btn.place(Rect::new(
+        w_button!(self, btn_generate).place(Rect::new(
             right_column_2_x,
             board_y + board_width - square_width + (square_width - btn_h) / 2.,
             2. * btn_w,
@@ -164,31 +167,16 @@ impl Game {
     pub fn draw(&mut self) {
         self.update_window_size();
 
-        self.draw_board();
-
-        self.generate_btn.draw(&self.resources);
-        for (_, btn) in &self.game_mode_btns {
-            btn.draw(&self.resources);
-        }
-
         for (_, widget) in &mut self.widgets {
-            widget.draw(&self.resources);
+            widget.draw(&self.resources, &self.settings);
         }
 
         self.draw_fps();
     }
 
-    fn draw_board(&mut self) {
-        let params = BoardDrawParams {
-            show_rules: self.show_rules,
-            rules_font_size: self.rules_font_size,
-        };
-
-        self.board.draw(&params, &self.resources, &self.settings);
-    }
-
     fn get_game_mode_button<'a>(&'a mut self, mode: &GameMode) -> &'a mut ButtonWidget {
-        self.game_mode_btns.get_mut(mode).unwrap()
+        let id = self.game_mode_btns.get(mode).unwrap();
+        game::button(&mut self.widgets, *id)
     }
 
     fn draw_fps(&self) {

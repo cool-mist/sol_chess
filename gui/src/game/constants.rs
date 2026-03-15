@@ -42,4 +42,3 @@ pub const CUSTOM_BUTTON_TEXT: &str = "CUSTOM";
 pub const GENERATE_BUTTON_TEXT: &str = "GENERATE";
 pub const PIECES_LABEL_TEXT: &str = "Pieces";
 pub const AGE_LABEL_TEXT: &str = "   Age";
-

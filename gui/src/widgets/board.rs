@@ -2,11 +2,10 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    game::{GameMode, GameSettings, constants},
+    game::{Settings, constants},
     resources::{Resources, SoundKind},
     widgets::*,
 };
-use macroquad::prelude::*;
 use sol_lib::{
     board::{Board, BoardState, piece::Piece},
     generator::Puzzle,
@@ -17,33 +16,11 @@ pub struct BoardWidget {
     current_board: Board,
     square_width: f32,
     pub num_squares: usize, // this is a constant = 4 for now.
+    pub show_rules: bool,
+    rules_font_size: f32,
     board_rect: Rect,
     squares: Vec<GameSquare>,
     state: GameState,
-}
-
-#[derive(Copy, Clone)]
-pub enum ButtonName {
-    Reset,
-    Next,
-    Rules,
-    Generate,
-}
-
-pub enum CounterName {
-    Pieces,
-    Age,
-}
-
-pub enum GameInteraction {
-    NoInteraction,
-    Board(BoardState),
-    ButtonRelease(ButtonName),
-    GameMode(GameMode),
-    Counter(CounterName, u32),
-    ToggleDebug,
-    HideRules,
-    Quit,
 }
 
 pub struct BoardInteraction {
@@ -58,9 +35,15 @@ impl BoardWidget {
         board
     }
 
-    pub fn initialize_drawables(&mut self, square_width: f32, board_rect: Rect) {
+    pub fn initialize_drawables(
+        &mut self,
+        square_width: f32,
+        board_rect: Rect,
+        rules_font_size: f32,
+    ) {
         self.square_width = square_width;
         self.board_rect = board_rect;
+        self.rules_font_size = rules_font_size;
 
         let dark = UiColor::Brown.to_bg_color();
         let light = UiColor::Yellow.to_bg_color();
@@ -90,11 +73,11 @@ impl BoardWidget {
         self.squares = rects;
     }
 
-    pub fn draw(&self, params: &BoardDrawParams, resources: &Resources, settings: &GameSettings) {
+    pub fn draw(&self, resources: &Resources, settings: &Settings) {
         let board_shadow_width = constants::BOARD_SHADOW_MULTIPLIER * self.square_width;
         draw_shadow(&self.board_rect, board_shadow_width);
 
-        if params.show_rules {
+        if self.show_rules {
             draw_rectangle(
                 self.board_rect.x,
                 self.board_rect.y,
@@ -103,16 +86,20 @@ impl BoardWidget {
                 UiColor::Yellow.to_bg_color(),
             );
 
-            let font_size = params.rules_font_size * 0.4;
             let rules = "\
                 Every move should be a \n\
                 capture. Win when only \n\
                 one piece is left.\n\
                 Age: Each piece can only \n\
                 move 'age' times";
-            let measurement = measure_text(rules, Some(resources.font()), font_size as u16, 1.0);
+            let measurement = measure_text(
+                rules,
+                Some(resources.font()),
+                self.rules_font_size as u16,
+                1.0,
+            );
             let draw_text_params = TextParams {
-                font_size: font_size as u16,
+                font_size: self.rules_font_size as u16,
                 font: Some(resources.font()),
                 color: UiColor::Brown.to_bg_color(),
                 ..Default::default()
@@ -214,9 +201,9 @@ impl BoardWidget {
 
     pub fn handle_input(
         &mut self,
-        interaction: &UserInteraction,
+        interaction: &Interaction,
         resources: &Resources,
-        settings: &GameSettings,
+        settings: &Settings,
     ) -> BoardInteraction {
         let mouse_pos = interaction.mouse_pos;
         if mouse_pos.overlaps_rect(&self.board_rect) == false {
@@ -315,7 +302,7 @@ impl BoardWidget {
         mouse_pos: Circle,
         source: (usize, usize),
         resources: &Resources,
-        settings: &GameSettings,
+        settings: &Settings,
     ) -> GameState {
         let mut selected = None;
         for square in &mut self.squares {
@@ -443,9 +430,4 @@ fn piece_draw_texture_params<'a>(
 struct PieceDrawTextureParams<'a> {
     texture: &'a Texture2D,
     draw_text_params: DrawTextureParams,
-}
-
-pub struct BoardDrawParams {
-    pub show_rules: bool,
-    pub rules_font_size: f32,
 }

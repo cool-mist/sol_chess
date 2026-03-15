@@ -1,10 +1,10 @@
 mod board;
+use std::collections::HashSet;
+
 pub use board::*;
 
 mod button;
 pub use button::*;
-
-mod id_text_input;
 
 mod label;
 pub use label::*;
@@ -18,8 +18,11 @@ use macroquad::{
 };
 use quad_snd::PlaySoundParams;
 
-pub struct UserInteraction {
+pub struct Interaction {
     pub mouse_pos: Circle,
+    pub keys_released: HashSet<KeyCode>,
+    pub mouse_pressed: HashSet<MouseButton>,
+    pub mouse_released: HashSet<MouseButton>,
 }
 
 #[allow(unused)]
@@ -65,10 +68,6 @@ impl UiColor {
             100,
         )
     }
-}
-
-pub fn draw_rect(rect: &Rect, color: UiColor) {
-    draw_rectangle(rect.x, rect.y, rect.w, rect.h, color.to_bg_color());
 }
 
 pub fn draw_shadow(rect: &Rect, shadow_width: f32) {

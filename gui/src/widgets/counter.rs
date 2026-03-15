@@ -1,15 +1,16 @@
 use crate::{
-    game::GameSettings,
+    game::{Command, Settings},
     resources::{Resources, SoundKind},
     widgets::*,
 };
 use macroquad::prelude::*;
 
-#[derive(Default)]
 pub struct CounterWidget {
     visual_rect: Rect,
     increment: ButtonWidget,
     decrement: ButtonWidget,
+    pub on_increment: fn(CounterWidgetInteraction) -> Command,
+    pub on_decrement: fn(CounterWidgetInteraction) -> Command,
     min: u32,
     max: u32,
     current: u32,
@@ -22,19 +23,43 @@ pub struct CounterWidget {
 
 pub struct CounterWidgetInteraction {
     pub current: u32,
-    pub interacted: bool,
+    pub interaction_type: Option<CounterInteractionType>,
+}
+
+#[derive(Copy, Clone)]
+pub enum CounterInteractionType {
+    Increment,
+    Decrement,
+}
+
+impl CounterWidgetInteraction {
+    fn decrement(current: u32) -> Self {
+        Self {
+            current,
+            interaction_type: Some(CounterInteractionType::Decrement),
+        }
+    }
+
+    fn increment(current: u32) -> Self {
+        Self {
+            current,
+            interaction_type: Some(CounterInteractionType::Increment),
+        }
+    }
+
+    fn not_interacted(current: u32) -> Self {
+        Self {
+            current,
+            interaction_type: None,
+        }
+    }
 }
 
 impl CounterWidget {
-    pub fn new(
-        min: u32,
-        max: u32,
-        current: u32,
-        is_active: bool,
-        color: UiColor,
-    ) -> Self {
-        let increment = ButtonWidget::new(is_active, color, "+");
-        let decrement = ButtonWidget::new(is_active, color, "-");
+    pub fn new(min: u32, max: u32, current: u32, is_active: bool, color: UiColor) -> Self {
+        let increment = ButtonWidget::new(is_active, color, "+", SoundKind::Click);
+        let decrement = ButtonWidget::new(is_active, color, "-", SoundKind::Click);
+
         Self {
             min,
             max,
@@ -83,35 +108,33 @@ impl CounterWidget {
 
     pub fn handle_input(
         &mut self,
-        _: &UserInteraction,
+        interaction: &Interaction,
         resources: &Resources,
-        settings: &GameSettings,
+        settings: &Settings,
     ) -> CounterWidgetInteraction {
-        let mut interacted = false;
         if self
             .increment
-            .handle_input(resources.sound(&SoundKind::Click), settings.volume)
+            .handle_input(&interaction, &resources, &settings)
+            .clicked
         {
             if self.current < self.max {
                 self.current += 1;
-                interacted = true;
+                return CounterWidgetInteraction::increment(self.current);
             }
         }
 
         if self
             .decrement
-            .handle_input(resources.sound(&SoundKind::Click), settings.volume)
+            .handle_input(&interaction, &resources, &settings)
+            .clicked
         {
             if self.current > self.min {
                 self.current -= 1;
-                interacted = true;
+                return CounterWidgetInteraction::decrement(self.current);
             }
         }
 
-        return CounterWidgetInteraction {
-            current: self.current,
-            interacted,
-        };
+        return CounterWidgetInteraction::not_interacted(self.current);
     }
 
     pub fn draw(&mut self, resources: &Resources) {
@@ -147,5 +170,25 @@ impl CounterWidget {
                 ..Default::default()
             },
         );
+    }
+}
+
+impl Default for CounterWidget {
+    fn default() -> Self {
+        Self {
+            on_increment: |_| Command::NoInteraction,
+            on_decrement: |_| Command::NoInteraction,
+            visual_rect: Default::default(),
+            increment: Default::default(),
+            decrement: Default::default(),
+            min: Default::default(),
+            max: Default::default(),
+            current: Default::default(),
+            font_size: Default::default(),
+            visual_dims: Default::default(),
+            increment_dims: Default::default(),
+            decrement_dims: Default::default(),
+            is_active: Default::default(),
+        }
     }
 }
