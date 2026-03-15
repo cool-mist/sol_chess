@@ -11,14 +11,14 @@ pub struct LabelWidget {
 }
 
 impl LabelWidget {
-    pub fn initialize_state(text: &str) -> Self {
+    pub fn new(text: &str) -> Self {
         Self {
             text: text.to_string(),
             ..Default::default()
         }
     }
 
-    pub fn initialize_drawables(&mut self, rect: Rect, font_size: f32, resources: &Resources) {
+    pub fn place(&mut self, rect: Rect, font_size: f32, resources: &Resources) {
         self.rect = rect;
         self.font_size = font_size;
         self.text_dimensions =

@@ -12,6 +12,7 @@ pub struct ButtonWidget {
     rect: Rect,
     shadow_width: f32,
     sound: SoundKind,
+    font_size: FontSize,
     pub on_click: fn(&mut ButtonWidget) -> Command,
 }
 
@@ -20,13 +21,15 @@ pub struct ButtonInteraction {
 }
 
 impl ButtonInteraction {
-    fn not_clicked() -> Self {
-        Self { clicked: false }
-    }
-
     fn clicked() -> Self {
         Self { clicked: true }
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum FontSize {
+    Fixed(f32),
+    Fill,
 }
 
 impl ButtonWidget {
@@ -41,8 +44,9 @@ impl ButtonWidget {
         }
     }
 
-    pub fn place(&mut self, rect: Rect) {
+    pub fn place(&mut self, rect: Rect, font_size: FontSize) {
         self.rect = rect;
+        self.font_size = font_size;
     }
 
     pub fn draw(&self, resources: &Resources) {
@@ -86,19 +90,26 @@ impl ButtonWidget {
         };
 
         let font = resources.font();
-        let target_w = self.rect.w * 0.9;
-        let target_h = self.rect.h;
-        let mut font_size = 20;
-        let mut dims = measure_text(&text, Some(&font), font_size, 1.0);
-        loop {
-            if dims.width <= target_w && dims.height <= target_h {
-                break;
+        let font_size = match self.font_size {
+            FontSize::Fixed(s) => s as u16,
+            FontSize::Fill => {
+                let target_w = self.rect.w * 0.9;
+                let target_h = self.rect.h;
+                let mut font_size = 22;
+                loop {
+                    font_size -= 2;
+                    let dims = measure_text(&text, Some(&font), font_size as u16, 1.0);
+
+                    if dims.width <= target_w && dims.height <= target_h {
+                        break;
+                    }
+                }
+
+                font_size
             }
+        };
 
-            font_size -= 2;
-            dims = measure_text(&text, Some(&font), font_size as u16, 1.0);
-        }
-
+        let dims = measure_text(&text, Some(&font), font_size, 1.0);
         let button_draw_offset = self.get_button_draw_offset();
         let text_params = TextParams {
             font_size,
@@ -130,17 +141,17 @@ impl ButtonWidget {
         interaction: &Interaction,
         resources: &Resources,
         settings: &Settings,
-    ) -> ButtonInteraction {
+    ) -> Option<ButtonInteraction> {
         if !self.is_active {
             self.is_down = false;
-            return ButtonInteraction::not_clicked();
+            return None;
         }
 
         let mouse = interaction.mouse_pos;
         if interaction.mouse_pressed.contains(&MouseButton::Left) {
             if mouse.overlaps_rect(&self.rect) {
                 self.is_down = true;
-                return ButtonInteraction::not_clicked();
+                return None;
             }
         }
 
@@ -150,13 +161,13 @@ impl ButtonWidget {
                 let volume = settings.volume;
                 play_sound_once(&click_sound, volume);
                 self.is_down = false;
-                return ButtonInteraction::clicked();
+                return Some(ButtonInteraction::clicked());
             }
 
             self.is_down = false;
         }
 
-        ButtonInteraction::not_clicked()
+        None
     }
 }
 
@@ -170,6 +181,7 @@ impl Default for ButtonWidget {
             color: UiColor::Grey,
             text: String::new(),
             sound: SoundKind::Click,
+            font_size: FontSize::Fill,
             on_click: |_| Command::NoInteraction,
         }
     }

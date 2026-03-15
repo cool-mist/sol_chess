@@ -2,7 +2,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    game::{Settings, constants},
+    game::{Command, Settings, constants},
     resources::{Resources, SoundKind},
     widgets::*,
 };
@@ -11,12 +11,12 @@ use sol_lib::{
     generator::Puzzle,
 };
 
-#[derive(Default)]
 pub struct BoardWidget {
-    current_board: Board,
-    square_width: f32,
     pub num_squares: usize, // this is a constant = 4 for now.
     pub show_rules: bool,
+    pub on_board_state_changed: fn(BoardInteraction) -> Command,
+    current_board: Board,
+    square_width: f32,
     rules_font_size: f32,
     board_rect: Rect,
     squares: Vec<GameSquare>,
@@ -24,23 +24,18 @@ pub struct BoardWidget {
 }
 
 pub struct BoardInteraction {
-    pub new_board_state: Option<BoardState>,
+    pub new_board_state: BoardState,
 }
 
 impl BoardWidget {
-    pub fn initialize_state(num_squares: usize, current_board: Board) -> BoardWidget {
+    pub fn new(num_squares: usize, current_board: Board) -> BoardWidget {
         let mut board = BoardWidget::default();
         board.num_squares = num_squares;
         board.current_board = current_board;
         board
     }
 
-    pub fn initialize_drawables(
-        &mut self,
-        square_width: f32,
-        board_rect: Rect,
-        rules_font_size: f32,
-    ) {
+    pub fn place(&mut self, square_width: f32, board_rect: Rect, rules_font_size: f32) {
         self.square_width = square_width;
         self.board_rect = board_rect;
         self.rules_font_size = rules_font_size;
@@ -169,49 +164,18 @@ impl BoardWidget {
         }
     }
 
-    fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
-        &mut self.squares[i * self.num_squares + j]
-    }
-
-    fn draw_debug(&self) {
-        let mut debug_lines = vec![];
-        let (mx, my) = mouse_position();
-        let hover_square = self.squares.iter().find(|s| {
-            let c = Circle::new(mx, my, 0.0);
-            if c.overlaps_rect(&s.rect) {
-                return true;
-            }
-            return false;
-        });
-        debug_lines.push(format!("Game State: {}", self.state));
-        debug_lines.push(format!("Board State: {}", self.current_board.game_state));
-        if let Some(hover_square) = hover_square {
-            debug_lines.push(format!("Hover: [ {}, {} ]", hover_square.i, hover_square.j));
-        }
-        self.add_debug_info(debug_lines);
-    }
-
-    fn add_debug_info(&self, lines: Vec<String>) {
-        let mut y = 20.0;
-        for line in lines {
-            draw_text(&line, 10.0, y, 20.0, BLACK);
-            y += 25.0;
-        }
-    }
-
     pub fn handle_input(
         &mut self,
         interaction: &Interaction,
         resources: &Resources,
         settings: &Settings,
-    ) -> BoardInteraction {
+    ) -> Option<BoardInteraction> {
         let mouse_pos = interaction.mouse_pos;
         if mouse_pos.overlaps_rect(&self.board_rect) == false {
-            return BoardInteraction {
-                new_board_state: None,
-            };
+            return None;
         }
 
+        let old_board_state = self.current_board.state;
         if is_mouse_button_released(MouseButton::Left) {
             let current_state = self.state.clone();
             let new_state = match current_state {
@@ -247,10 +211,44 @@ impl BoardWidget {
             self.state = new_state;
         }
 
-        let board_state = &self.current_board.game_state;
-        return BoardInteraction {
-            new_board_state: Some(*board_state),
-        };
+        if old_board_state == self.current_board.state {
+            return None;
+        }
+
+        let board_state = self.current_board.state;
+        return Some(BoardInteraction {
+            new_board_state: board_state,
+        });
+    }
+
+    fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
+        &mut self.squares[i * self.num_squares + j]
+    }
+
+    fn draw_debug(&self) {
+        let mut debug_lines = vec![];
+        let (mx, my) = mouse_position();
+        let hover_square = self.squares.iter().find(|s| {
+            let c = Circle::new(mx, my, 0.0);
+            if c.overlaps_rect(&s.rect) {
+                return true;
+            }
+            return false;
+        });
+        debug_lines.push(format!("Game State: {}", self.state));
+        debug_lines.push(format!("Board State: {}", self.current_board.state));
+        if let Some(hover_square) = hover_square {
+            debug_lines.push(format!("Hover: [ {}, {} ]", hover_square.i, hover_square.j));
+        }
+        self.add_debug_info(debug_lines);
+    }
+
+    fn add_debug_info(&self, lines: Vec<String>) {
+        let mut y = 20.0;
+        for line in lines {
+            draw_text(&line, 10.0, y, 20.0, BLACK);
+            y += 25.0;
+        }
     }
 
     pub fn reset(&mut self, puzzle: &Puzzle) {
@@ -337,11 +335,11 @@ impl BoardWidget {
             let m = m.expect("legal move should be found");
             self.current_board.make_move(m.clone());
 
-            if self.current_board.game_state == BoardState::Won
-                || self.current_board.game_state == BoardState::Lost
+            if self.current_board.state == BoardState::Won
+                || self.current_board.state == BoardState::Lost
             {
                 self.reset_squares();
-                if self.current_board.game_state == BoardState::Won {
+                if self.current_board.state == BoardState::Won {
                     play_sound_once(resources.sound(&SoundKind::Win), settings.volume);
                 } else {
                     play_sound_once(resources.sound(&SoundKind::Loss), settings.volume);
@@ -430,4 +428,20 @@ fn piece_draw_texture_params<'a>(
 struct PieceDrawTextureParams<'a> {
     texture: &'a Texture2D,
     draw_text_params: DrawTextureParams,
+}
+
+impl Default for BoardWidget {
+    fn default() -> Self {
+        Self {
+            on_board_state_changed: |_| Command::NoInteraction,
+            num_squares: Default::default(),
+            show_rules: Default::default(),
+            current_board: Default::default(),
+            square_width: Default::default(),
+            rules_font_size: Default::default(),
+            board_rect: Default::default(),
+            squares: Default::default(),
+            state: Default::default(),
+        }
+    }
 }

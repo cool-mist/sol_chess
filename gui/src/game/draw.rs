@@ -1,6 +1,6 @@
 use super::{Game, constants};
 use crate::{
-    game::{self, GameMode, w_board, w_button, w_counter, w_label},
+    game::{self, GameMode},
     widgets::*,
 };
 use macroquad::{math, prelude::*};
@@ -33,92 +33,102 @@ impl Game {
             heading_text_dims.width,
             heading_text_dims.height,
         );
-        w_label!(self, label_heading).initialize_drawables(
-            heading_rect,
-            heading_font_size,
-            &self.resources,
-        );
+        w_label!(self, label_heading).place(heading_rect, heading_font_size, &self.resources);
 
         let board_rect = Rect::new(board_x, board_y, board_width, board_width);
-        w_board!(self, board).initialize_drawables(
-            square_width,
-            board_rect,
-            heading_font_size * 0.4,
-        );
+        w_board!(self, board).place(square_width, board_rect, heading_font_size * 0.4);
 
         // Buttons
         let btn_h = constants::BUTTON_HEIGHT_MULTIPLIER * min_dimension;
         let btn_w = constants::BUTTON_WIDTH_MULTIPLIER * board_width;
+        let btn_font_size = heading_font_size * 0.3;
 
         // Bottom row
         let bottom_row_y =
             board_width + board_y + constants::BOTTOM_ROW_OFFSET_MULTIPLIER * square_width;
-        w_button!(self, btn_rules).place(Rect::new(
-            board_x + (square_width - btn_w) / 2.,
-            bottom_row_y,
-            btn_w,
-            btn_h,
-        ));
+        w_button!(self, btn_rules).place(
+            Rect::new(
+                board_x + (square_width - btn_w) / 2.,
+                bottom_row_y,
+                btn_w,
+                btn_h,
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
-        w_button!(self, btn_reset).place(Rect::new(
-            board_x + square_width + (square_width - btn_w) / 2.,
-            bottom_row_y,
-            btn_w,
-            btn_h,
-        ));
+        w_button!(self, btn_reset).place(
+            Rect::new(
+                board_x + square_width + (square_width - btn_w) / 2.,
+                bottom_row_y,
+                btn_w,
+                btn_h,
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
         let btn_next_x_offset = (board_width - square_width) + (square_width - btn_w) / 2.;
-        w_button!(self, btn_next).place(Rect::new(
-            board_x + btn_next_x_offset,
-            bottom_row_y,
-            btn_w,
-            btn_h,
-        ));
+        w_button!(self, btn_next).place(
+            Rect::new(board_x + btn_next_x_offset, bottom_row_y, btn_w, btn_h),
+            FontSize::Fixed(btn_font_size),
+        );
 
         // Right column
         let right_column_x =
             board_x + board_width + constants::RIGHT_COLUMN_OFFSET_MULTIPLIER * square_width;
-        self.get_game_mode_button(&GameMode::Easy).place(Rect::new(
-            right_column_x,
-            board_y + (square_width - btn_h) / 2.,
-            btn_w,
-            btn_h,
-        ));
+        self.get_game_mode_button(&GameMode::Easy).place(
+            Rect::new(
+                right_column_x,
+                board_y + (square_width - btn_h) / 2.,
+                btn_w,
+                btn_h,
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
-        self.get_game_mode_button(&GameMode::Medium)
-            .place(Rect::new(
+        self.get_game_mode_button(&GameMode::Medium).place(
+            Rect::new(
                 right_column_x,
                 board_y + square_width + (square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
-            ));
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
-        self.get_game_mode_button(&GameMode::Hard).place(Rect::new(
-            right_column_x,
-            board_y + 2. * square_width + (square_width - btn_h) / 2.,
-            btn_w,
-            btn_h,
-        ));
+        self.get_game_mode_button(&GameMode::Hard).place(
+            Rect::new(
+                right_column_x,
+                board_y + 2. * square_width + (square_width - btn_h) / 2.,
+                btn_w,
+                btn_h,
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
-        self.get_game_mode_button(&GameMode::Custom)
-            .place(Rect::new(
+        self.get_game_mode_button(&GameMode::Custom).place(
+            Rect::new(
                 right_column_x,
                 board_y + 3. * square_width + (square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
-            ));
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
         // Right column 2
         let right_column_2_x =
             right_column_x + btn_w + constants::RIGHT_COLUMN_OFFSET_MULTIPLIER * square_width;
-        w_button!(self, btn_generate).place(Rect::new(
-            right_column_2_x,
-            board_y + board_width - square_width + (square_width - btn_h) / 2.,
-            2. * btn_w,
-            btn_h,
-        ));
+        w_button!(self, btn_generate).place(
+            Rect::new(
+                right_column_2_x,
+                board_y + board_width - square_width + (square_width - btn_h) / 2.,
+                2. * btn_w,
+                btn_h,
+            ),
+            FontSize::Fixed(btn_font_size),
+        );
 
-        w_label!(self, label_pieces).initialize_drawables(
+        w_label!(self, label_pieces).place(
             Rect::new(
                 right_column_2_x,
                 board_y + (square_width + btn_h) / 2.,
@@ -129,20 +139,20 @@ impl Game {
             &self.resources,
         );
 
-        w_counter!(self, counter_pieces).initialize_drawables(
+        w_counter!(self, counter_pieces).place(
             Rect::new(
                 right_column_2_x,
                 board_y + square_width + (2. * square_width - 2. * btn_h) / 2.,
                 btn_w,
                 2. * btn_h,
             ),
-            30.,
+            0.50 * btn_h,
             &self.resources,
         );
 
         // Right column 3
         let right_column_3_x = right_column_2_x + btn_w;
-        w_label!(self, label_max_age).initialize_drawables(
+        w_label!(self, label_max_age).place(
             Rect::new(
                 right_column_2_x + btn_w,
                 board_y + (square_width + btn_h) / 2.,
@@ -152,14 +162,14 @@ impl Game {
             0.30 * btn_h,
             &self.resources,
         );
-        w_counter!(self, counter_moves).initialize_drawables(
+        w_counter!(self, counter_moves).place(
             Rect::new(
                 right_column_3_x,
                 board_y + square_width + (2. * square_width - 2. * btn_h) / 2.,
                 btn_w,
                 2. * btn_h,
             ),
-            30.,
+            0.50 * btn_h,
             &self.resources,
         );
     }

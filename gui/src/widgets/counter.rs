@@ -77,12 +77,7 @@ impl CounterWidget {
         self.decrement.is_active = is_active;
     }
 
-    pub fn initialize_drawables(
-        &mut self,
-        total_area: Rect,
-        font_size: f32,
-        resources: &Resources,
-    ) {
+    pub fn place(&mut self, total_area: Rect, font_size: f32, resources: &Resources) {
         let margin_y = 0.05 * total_area.h;
         let btn_h = total_area.h * 0.3;
         let btn_w = total_area.w * 0.9;
@@ -94,10 +89,10 @@ impl CounterWidget {
         self.visual_rect = Rect::new(btn_x, visual_y, btn_w, btn_h);
 
         let increment_rect = Rect::new(btn_x, increment_y, btn_w, btn_h);
-        self.increment.place(increment_rect);
+        self.increment.place(increment_rect, FontSize::Fill);
 
         let decrement_rect = Rect::new(btn_x, decrement_y, btn_w, btn_h);
-        self.decrement.place(decrement_rect);
+        self.decrement.place(decrement_rect, FontSize::Fill);
 
         self.increment_dims = measure_text("+", Some(resources.font()), font_size as u16, 1.0);
         self.decrement_dims = measure_text("-", Some(resources.font()), font_size as u16, 1.0);
@@ -112,25 +107,27 @@ impl CounterWidget {
         resources: &Resources,
         settings: &Settings,
     ) -> CounterWidgetInteraction {
-        if self
+        if let Some(interaction) = self
             .increment
             .handle_input(&interaction, &resources, &settings)
-            .clicked
         {
-            if self.current < self.max {
-                self.current += 1;
-                return CounterWidgetInteraction::increment(self.current);
+            if interaction.clicked {
+                if self.current < self.max {
+                    self.current += 1;
+                    return CounterWidgetInteraction::increment(self.current);
+                }
             }
         }
 
-        if self
+        if let Some(interaction) = self
             .decrement
             .handle_input(&interaction, &resources, &settings)
-            .clicked
         {
-            if self.current > self.min {
-                self.current -= 1;
-                return CounterWidgetInteraction::decrement(self.current);
+            if interaction.clicked {
+                if self.current > self.min {
+                    self.current -= 1;
+                    return CounterWidgetInteraction::decrement(self.current);
+                }
             }
         }
 
@@ -141,24 +138,7 @@ impl CounterWidget {
         self.increment.draw(resources);
         self.decrement.draw(resources);
 
-        let font = resources.font();
-        let mut min_dim = self.visual_rect.w.min(self.visual_rect.h);
-        let mut font_size = self.font_size as u16;
-        loop {
-            if min_dim <= self.visual_rect.w * 0.5 {
-                break;
-            }
-
-            let dims = measure_text(
-                &self.current.to_string(),
-                Some(&font),
-                font_size as u16,
-                1.0,
-            );
-            min_dim = dims.width.min(dims.height);
-            font_size -= 1;
-        }
-
+        let font_size = self.font_size as u16;
         draw_text_ex(
             &self.current.to_string(),
             self.visual_rect.x + (self.visual_rect.w - self.visual_dims.width) / 2.,

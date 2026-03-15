@@ -23,7 +23,7 @@ use crate::{board::piece::Piece, generator::Puzzle};
 pub struct Board {
     pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
     pub legal_moves: HashSet<CMove>,
-    pub game_state: BoardState,
+    pub state: BoardState,
     pub id: String,
     pub size: usize,
     pieces_remaining: u8,
@@ -64,7 +64,7 @@ impl Board {
             legal_moves: HashSet::new(),
             id,
             pieces_remaining: 0,
-            game_state: BoardState::NotStarted,
+            state: BoardState::NotStarted,
             size: BOARD_SIZE,
             max_moves_per_piece: options.max_moves_per_piece,
         }
@@ -190,7 +190,7 @@ impl Board {
             next_move: CMove,
         }
 
-        if let BoardState::Won = self.game_state {
+        if let BoardState::Won = self.state {
             return Puzzle {
                 board: self.clone(),
                 solutions: vec![vec![]],
@@ -223,7 +223,7 @@ impl Board {
 
             let (mut board, mut moves_so_far, next) = (top.board, top.moves_so_far, top.next_move);
             board.make_move(next.clone());
-            match board.game_state {
+            match board.state {
                 BoardState::Won => {
                     moves_so_far.push(next);
                     solutions.push(moves_so_far);
@@ -374,7 +374,7 @@ impl Board {
     }
 
     fn calc_game_state(&mut self) {
-        self.game_state = if self.pieces_remaining == 0 {
+        self.state = if self.pieces_remaining == 0 {
             BoardState::NotStarted
         } else if self.pieces_remaining == 1 {
             BoardState::Won
@@ -674,7 +674,7 @@ mod tests {
     #[test]
     fn test_smoke_puzzle() {
         let mut board = Board::new();
-        assert_eq!(BoardState::NotStarted, board.game_state);
+        assert_eq!(BoardState::NotStarted, board.state);
         assert_eq!(0, board.pieces_remaining);
 
         // K . . .
@@ -682,22 +682,22 @@ mod tests {
         // . . R .
         // N . . .
         board.set(sq!("Ka4"));
-        assert_eq!(BoardState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.state);
 
         board.set(sq!("Pb3"));
         board.set(sq!("Rc2"));
         board.set(sq!("Na1"));
 
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.state);
         assert_eq!(4, board.pieces_remaining);
 
         assert!(board.make_move(mv!("Na1", "Rc2")).is_some());
         assert_eq!(3, board.pieces_remaining);
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.state);
 
         assert!(board.make_move(mv!("Pb3", "Ka4")).is_some());
         assert_eq!(2, board.pieces_remaining);
-        assert_eq!(BoardState::Lost, board.game_state);
+        assert_eq!(BoardState::Lost, board.state);
 
         // P . . .
         // . . . .
@@ -712,12 +712,12 @@ mod tests {
         // . . N .
         // P . . .
         assert_eq!(4, board.pieces_remaining);
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.state);
 
         board.make_move(mv!("Qa3", "Pa4"));
         board.make_move(mv!("Nc2", "Pa1"));
         assert_eq!(2, board.pieces_remaining);
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.state);
 
         // Q . . .
         // . . . .
@@ -725,7 +725,7 @@ mod tests {
         // N . . .
         board.make_move(mv!("Qa4", "Na1"));
         assert_eq!(1, board.pieces_remaining);
-        assert_eq!(BoardState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.state);
     }
 
     #[test]
@@ -775,7 +775,7 @@ mod tests {
             solution
                 .into_iter()
                 .for_each(|m| assert!(board.make_move(m).is_some()));
-            assert_eq!(BoardState::Won, board.game_state);
+            assert_eq!(BoardState::Won, board.state);
         }
     }
 

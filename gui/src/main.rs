@@ -9,7 +9,7 @@ use miniquad::date;
 
 use game::constants;
 
-use crate::widgets::Interaction;
+use crate::{game::Game, widgets::Interaction};
 
 fn window_conf() -> Conf {
     let window_title = {
@@ -31,7 +31,7 @@ fn window_conf() -> Conf {
 async fn main() {
     rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
-    let mut game = game::new_game().await;
+    let mut game = Game::new().await;
     loop {
         clear_background(background_color);
 
